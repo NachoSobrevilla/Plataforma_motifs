@@ -1,0 +1,144 @@
+
+class freespan(object):
+    
+    def __init__(self, ds, max_len, min_sup):
+        self.ds = ds
+        self.max_len = max_len
+        self.min_sup = min_sup
+
+
+    def candidates_generator(self, F_k=[]):
+        """Función de generar las secuencias candidados de longitud k"""
+        for f in F_k:
+            for n in 'ACGT':
+                yield f+n
+
+
+    def count_candidates(self, Ds, c_list):
+        """Función para contar a los candidatos dentro de las secuencias"""
+        f = {}
+        for s in Ds:
+            for n in c_list:
+                # x = s.count(n)
+                a = 0
+                if n in f.keys():
+                    x += f.get(n)
+                    f[n] = x
+                else:
+                    f[n] = x
+
+                x = 0
+
+        return f
+
+
+    def generator_f_list(self):
+        """Función para encontrar a los candidatos dentro de las secuencias"""
+        f = {}
+        
+        for s in Ds:
+            for n in c_list:
+                x = s.find(n)
+
+
+                # print(n+' - '+str(x))
+                
+                # for i in range(len(s)-k):
+                    
+                #     if s[i:k+1+i] == n and k+1+i <= len(s):
+                #         print(s[i:k+1+i],' - ',n)
+                #         y += 1
+                #         break
+
+                # print(y)    
+                y = 1
+                # print(n,' ',x)
+                if x != -1:
+                    if n in f.keys():
+                        y += f.get(n)
+                        f[n] = y
+                        # print(y)
+                    else:
+                        f[n] = y
+                        # print(y)
+            
+                y = 0
+                
+        return f
+
+
+    def run(self):
+        """Funcón principal del algoritmo"""
+        k = 1
+        Ds = ['ATTAAAGGTTTATACCTTCCCAGGTAACAAACCAACCAACTTTCGATCTCTTGTAGATCTGTTCTCTAAA',
+            'CGAACTTTAAAATCTGTGTGGCTGTCACTCGGCTGCATGCTTAGTGCACTCACGCAGTATAATTAATAAC']
+            #   'TAATTACTGTCGTTGACAGGACACGAGTAACTCGTCTATCTTCTGCAGGCTGCTTACGGTTTCGTCCGTG',
+            #   'TTGCAGCCGATCATCAGCACATCTAGGTTTCGTCCGGGTGTGACCGAAAGGTAAGATGGAGAGCCTTGTC',
+            #   'CCTGGTTTCAACGAGAAAACACACGTCCAACTCAGTTTGCCTGTTTTACAGGTTCGCGACGTGCTCGTAC']
+        f_k = [['A', 'C', 'G', 'T']]
+        min_sup = 2
+        nucleotides = ['A','C', 'G','T']
+
+        while len(f_k[k-1]) != 0:  # != None:
+            candidates = [n for n in candidates_generator(f_k[k-1])]
+            candidates = find_candidates(Ds,candidates)
+            
+            # for i in range(len(f_k[k-1])):
+                
+            #     for j in range(len(nucleotides)):         
+            #         a = ''
+            #         b = ''
+            #         if  j == 0:
+            #             print(f_k[k-1][i], end=' - ')
+
+            #         # if j == i:
+            #         if f_k[k-1][i].count(nucleotides[j]) == len(nucleotides[j]):
+            #             a = str(f_k[k-1][i] + nucleotides[j])
+            #             a = candidates[a]
+            #             print('(', a, ')', end=' ')
+                    
+            #         elif j<i:
+            #             a = str(f_k[k-1][i] + nucleotides[j])
+            #             b = str(nucleotides[j] + f_k[k-1][i] )
+            #             # print(a, end='-')
+            #             if a in candidates.keys() and b in candidates.keys():
+            #                 a = candidates[a]
+            #                 b = candidates[b]
+            #                 print('(',a,b,')', end=' ')
+                        
+            #             else:
+            #                 print('( )', end=' ')
+            #             # print(b)
+                        
+            #         else:
+            #             print(' ', end=' ')
+                    
+                    
+            #     print('\n')
+                        
+            #         # print('(',a,b,')', end=' ')
+                
+                
+                    
+            #         # if j == 0:
+            #         #     print(nucleotides[i])
+            #     if i == len(f_k[k-1])-1:
+            #         print('   '+str(nucleotides))
+
+            f_k.append([key for key, value in candidates.items() if value >= min_sup])
+            candidates.clear()
+            k+=1
+        
+        # print(f_k[11],'\n')
+        # if len(f_k[11]) == 0:
+        #     print("vacio")
+        # else:
+        #     print("algo")
+        f_k.pop()
+        print(f_k)
+
+    
+
+
+if __name__ == "__main__":
+    run()
