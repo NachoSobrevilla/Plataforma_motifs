@@ -1,5 +1,3 @@
-
-from _typeshed import Self
 from collections import Counter
 from typing import Generator
 
@@ -17,7 +15,7 @@ class freespan(object):
         f = {}
         
         for s in self.ds:
-            x=[key for key,values in Counter(s).items()]
+            x=[key for key in Counter(s).keys()]
        
             for n in x:
                 if n in f.keys():
@@ -25,7 +23,8 @@ class freespan(object):
                 else:
                     f[n] = 1
 
-        f.update({key:value for key,value in f if value >= self.min_sup})
+
+        f.update({key:value for key,value in f.items() if value >= self.min_sup})
 
         return f
 
@@ -58,8 +57,11 @@ class freespan(object):
     
 def main():
     k = 10
-    ds = ['ATTAAAGGTTTATACCTTCCCAGGTAACAAACCAACCAACTTTCGATCTCTTGTAGATCTGTTCTCTAAA',
-          'CGAACTTTAAAATCTGTGTGGCTGTCACTCGGCTGCATGCTTAGTGCACTCACGCAGTATAATTAATAAC']
+    # ds = ['ATTAAAGGTTTATACCTTCCCAGGTAACAAACCAACCAACTTTCGATCTCTTGTAGATCTGTTCTCTAAA',
+    #       'CGAACTTTAAAATCTGTGTGGCTGTCACTCGGCTGCATGCTTAGTGCACTCACGCAGTATAATTAATAAC']
+    ds = ['ACGTGTAAAACTCTTGTT',
+          'CTAAGTCCGTAGCCGACT',
+          'GGATCCAATCGCTAATCG']
     min_sup = 2
 
     x = freespan(ds, k, min_sup)

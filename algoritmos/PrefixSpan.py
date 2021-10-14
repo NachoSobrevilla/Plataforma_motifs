@@ -59,27 +59,27 @@ class PrefixSpan(object):
     def generator_suffixes(self, ds=[], p=''):
         r = []
         for s in ds:
-            x = s.split(p,maxsplit=1)[1]
-            if len(x) > 0:
-                r.append(x)
+            x = s.split(p,maxsplit=1)
+            
+            if len(x[len(x)-1]) > 0:
+                r.append(x[len(x)-1])
         
         return r
         
 
-
-
-
-
-ds1 = ['ATTAAAGGTTTATACC',#TTCC',  # CAGGTAACAAACCAACCAACTTTCGATCTCTTGTAGATCTGTTCTCTAAA',
-       'CGAACTTTAAAATCTG']#TGTG']  # GCTGTCACTCGGCTGCATGCTTAGTGCACTCACGCAGTATAATTAATAAC']
+# ds1 = ['ATTAAAGGTTTATACC',#TTCC',  # CAGGTAACAAACCAACCAACTTTCGATCTCTTGTAGATCTGTTCTCTAAA',
+    #    'CGAACTTTAAAATCTG']#TGTG']  # GCTGTCACTCGGCTGCATGCTTAGTGCACTCACGCAGTATAATTAATAAC']
 #   'TAATTACTGTCGTTGACAGGACACGAGTAACTCGTCTATCTTCTGCAGGCTGCTTACGGTTTCGTCCGTG',
 #   'TTGCAGCCGATCATCAGCACATCTAGGTTTCGTCCGGGTGTGACCGAAAGGTAAGATGGAGAGCCTTGTC',
-#   'CCTGGTTTCAACGAGAAAACACACGTCCAACTCAGTTTGCCTGTTTTACAGGTTCGCGACGTGCTCGTAC']
+#   'CCTGGTTTCAACGAGAAAACACACGTCCAACTCAGTTTGCCTGTTTTACAGGTTCGCGACGTGCTCGTAC
+sequence = ['ACGTGTAAAACTCTTGTT',
+            'CTAAGTCCGTAGCCGACT']
+
 min_sup1 = 2
 
 
 
-x = PrefixSpan(ds1, min_sup1)
+x = PrefixSpan(sequence, min_sup1)
 x.run()
 
 #class PrefixSpan(object):

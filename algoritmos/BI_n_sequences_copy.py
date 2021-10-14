@@ -1,12 +1,14 @@
 from collections import defaultdict
 
 
-class basado_indices(object):
+class basado_indices_sequencial(object):
 
-   def __init__(self, db_sequence = [], min_sup=2, pos ={}, debug = False, debugTime = False, csv = False):
+   def __init__(self, db_sequence = [], min_sup=2, pos = {}, patrones = {}, keys_seqs = [], debug = False, debugTime = False, csv = False):
       self.db_sequence = db_sequence
       self.min_sup=min_sup
       self.pos = pos
+      self.patrones = patrones
+      self.keys_seqs = keys_seqs
       self.debug = debug
       self.debugTime = debugTime
       self.csv = csv
@@ -41,6 +43,27 @@ class basado_indices(object):
    def get_pos(self):
       return self.pos
 
+   def set_patrones(self, patrones={}):
+      self.patrones = patrones
+
+   def get_patrones(self):
+      return self.patrones
+
+   def get_only_patrones(self):
+      return self.patrones.keys()
+
+   def get_only_patron_pos(self):
+      return self.patrones.values()
+
+   def update_patrones(self, patrones={}):
+      self.patrones.update(patrones)
+
+   def set_keys_seqs(self, keys_seqs=[]):
+      self.keys_seqs = keys_seqs
+
+   def get_keys_seqs(self):
+      return self.keys_seqs
+
    def get_lenpos(self):
       return len(self.pos)
 
@@ -57,7 +80,7 @@ class basado_indices(object):
 
    def run(self):
       
-      candidates = []
+      # candidates = []
       #new_pos={}
       #new_pos12 = defaultdict(list)
       #new_pos1 = defaultdict(default_factory=dict, iterable=new_pos12)
@@ -75,7 +98,7 @@ class basado_indices(object):
       
 
       while self.get_lenpos() != 0:
-         print('entra')
+         # print('entra')
          
             
          # for key, values in self.pos.items():  # Para cada candidato y sus posiciones
@@ -109,9 +132,10 @@ class basado_indices(object):
          # new_pos.clear()x
 
          # candidates.extend(self.find_next_pos_v1())
-         candidates.extend(self.find_next_pos_v2())
+         self.find_next_pos_v2()
+         # candidates.extend(self.find_next_pos_v2())
 
-         i+=1
+         # i+=1
          
          if self.get_debug() == True:
             self.print_candidates(itera=i)
@@ -124,13 +148,13 @@ class basado_indices(object):
          #    candidates.extend(list(sorted(self.pos.keys(), key=lambda x: x)))
          
          # print(candidates)
-         if i == 2:
-            break
+         # if i == 2:
+         #    break
 
       if self.get_debug() == True:
-         print('\n', 'Patrones Hallados: ', ', '.join(str(c) for c in candidates))
+         print('\n', 'Patrones Hallados: ', ', '.join(str(c) for c in self.get_only_patrones()))
       
-      return candidates
+      # return candidates
       
       
 
@@ -295,28 +319,73 @@ class basado_indices(object):
       # self.set_pos({key: values for key, values in r_value.items()
       #               if len(values.values()) > 0 if len(values) >= self.min_sup  })
 
-      
-                
+       
       self.set_pos({keys: values for keys, values in r_value.items() if len(values) >= self.min_sup})
 
-      return self.pos.keys()
+      # self.info_candidates()
+      self.update_patrones(self.get_pos())
+
+      # return self.pos.keys()
    
 
-   def find_next_pos_v3(self,):
+   def find_next_pos_v3(self):
       r_value = defaultdict(dict)
       r_values = defaultdict(list)
       pass
-         
 
-sequence = ['ACGTGTAAAACTCTTGTT', 
-            'CTAAGTCCGTAGCCGACT',
-            'GGATCCAATCGCTAATCG']
+   def info_patrones(self):
+      key_seq = lambda x: self.keys_seqs[x] if len(self.keys_seqs) else x
+      return { "Configuracion": {
+                                 "Algoritmo":"Basado en indices en multiples sequencias",
+                                 "min_sup": self.get_minsup(),
+                                 "Realizado en":"text/archivo FASTA",
+                                 "No. de sequencias ananlizadas": len(self.get_dbsequence()), 
+                                 "No. Patrones Hallados": len(self.get_patrones())},
+               "Patrones": [{
+                           "Patron": key,
+                           "Longitud": len(key),
+                           "Ocurrencias": len(values),
+                           "Posiciones": [{
+                                          "sequencia": key_seq(seq), 
+                                          "posicion": p+1} 
+                                          for seq, pos in values.items() for p in pos]
+                           }for key, values in self.patrones.items()]
+            }
+      # return {"Patrones": [{
+      #                      "Patron": key,
+      #                      "Longitud": len(key),
+      #                      "Ocurrencia": car(len(values)),
+      #                      "Posciones": [{
+      #                                     "sequencia": seq, 
+      #                                     "Inicios": pos} 
+      #                                     for seq, pos in values.items()]
+      #                      }for key, values in self.patrones.items()]
+      #       }
+      # self.keys_seqs.update({
+      #                      key: [{
+      #                          "longitud": len(key),
+      #                          "Frecuenicia": len(values),
+      #                          "Ocurrencia": car(len(values)),
+      #                          "posiciones": [{"sequencia":seq, "posciones":pos} for seq, pos in values.items() ]  #dict(values.items())
+      #                      }]
+      #                      
+      #                      })
+
+# sequence = ['ACGTGTAAAACTCTTGTT', 
+#             'CTAAGTCCGTAGCCGACT',
+#             'GGATCCAATCGCTAAT-CG']
 
 # # sequence = ['ACGTGTAAAACTCTTGTT', 
-#           'CTAAGTCCGTAGCCGACT']
-min_sup = 2
+# #           'CTAAGTCCGTAGCCGACT']
+# min_sup = 2
 
-bi = basado_indices(db_sequence=sequence, min_sup=min_sup, debug=True)
-bi.set_pos(bi.find_pos())
-print(bi.get_pos())
-bi.run()      
+# bi = basado_indices_sequencial(db_sequence=sequence, min_sup=min_sup, debug=True)
+# bi.set_pos(bi.find_pos())
+# bi.run()      
+# # print("\n")
+# # print(bi.get_keys_seqs())
+# print("\n")
+# print(bi.get_patrones())
+# print("\n")
+# print(bi.info_patrones())
+
