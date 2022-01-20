@@ -7,7 +7,7 @@ from typing import DefaultDict
 
 class basado_indices(object):
 
-   def __init__(self, s = '', min_sup=2, debug = False, pos={}, keys_seqs = '0', patrones ={}, debugTime = False, csv = False):
+   def __init__(self, s = '', min_sup=2, debug = False, pos={}, keys_seqs = [], patrones ={}, debugTime = False, csv = False, inputType = '', inputName = '', seq_code = '', initDateTime=0, finDateTime=0):
       self.sequence=s
       self.min_sup=min_sup
       self.debug = debug
@@ -16,6 +16,11 @@ class basado_indices(object):
       self.keys_seqs = keys_seqs
       self.patrones = patrones
       self.csv = csv
+      self.inputType = inputType
+      self.inputName = inputName
+      self.seq_code = seq_code
+      self.initDateTime = initDateTime
+      self.finDateTime = finDateTime
 
    
    def set_sequence(self, sequence =''):
@@ -61,7 +66,12 @@ class basado_indices(object):
       return self.patrones.values()
 
    def update_patrones(self, patrones={}):
-      self.patrones.update(patrones)
+      if self.get_seqCode() in self.patrones.keys():
+         self.patrones[self.seq_code].update(patrones)
+      else:
+         self.patrones[self.seq_code] =  patrones
+         
+      # self.patrones.update(patrones)
    
    def set_keys_seqs(self, keys_seqs = '0'):
       self.keys_seqs = keys_seqs
@@ -81,7 +91,39 @@ class basado_indices(object):
    def get_csv(self):
       return self.csv
    
+   def set_inputType(self, inputType=''):
+      self.inputType = inputType
    
+   def get_inputType(self):
+      return self.inputType
+   
+   def set_inputName(self, inputName=''):
+      self.inputName = inputName
+      
+   def get_inputName(self):
+      return self.inputName
+   
+   
+   
+   def set_seqCode(self, seq_code=''):
+      self.seq_code = seq_code
+   
+   def get_seqCode(self):
+      return self.seq_code
+   
+   def set_initDateTime(self, initDateTime=0):
+        self.initDateTime = initDateTime
+
+   def get_initDateTime(self):
+        return self.initDateTime
+    
+   def set_finDateTime(self, finDateTime=0):
+        self.finDateTime = finDateTime
+   
+   def get_finDateTime(self):
+        return self.finDateTime
+
+
 
 
    def run(self):
@@ -89,7 +131,8 @@ class basado_indices(object):
       candidates2 = []
       candidates3 = []
 
-      csv = DefaultDict(list)
+      if self.get_csv() == True:
+         csv = DefaultDict(list)
 
 
       i = 0
@@ -326,20 +369,49 @@ class basado_indices(object):
 
    def info_patrones(self):
       return {"Configuracion": {
-                           "Algoritmo": "Basado en indices",
-                           "min_sup": self.get_minsup(),
-                           "Realizado en": "text/archivo FASTA",
-                           "No. de sequencias ananlizadas": len(self.get_dbsequence()),
-                           "No. Patrones Hallados": len(self.get_patrones())
-                           },
+                                 "Algoritmo": "Basado en indices",
+                                 "Siglas": "BI",
+                                 "Min_sup": self.get_minsup(),
+                                 "Tipo_Entrada": self.get_inputType(),
+                                 "Entrada": self.get_inputName(),
+                                 "Sequencias_ananlizadas": '-'.join(self.get_keys_seqs()),
+                                 "Num_Sequencias_ananlizadas": len(self.patrones.keys()),
+                                 "Num_Patrones_hallados": sum(len(self.patrones[j]) for j in self.patrones.keys()),
+                                 "Fecha_Hora_Inicio": '{}'.format(self.get_initDateTime()),
+                                 "Fecha_Hora_Fin": '{}'.format(self.get_finDateTime()),
+                                 "Duracion": str(self.get_finDateTime() - self.get_initDateTime())
+                              },
                "Patrones": [{
-                           "Patron": key, 
-                           "Longitud": len(key),
-                           "Ocurrencias": len(values),
-                           "Posiciones":[{"sequencia":self.keys_seqs,
-                                          "posicion":pos+1}
-                                         for pos in values]
-                        } for key, values in self.patrones.items()]}
+                                 "Patron": k,
+                                 "Longitud": len(k),
+                                 "Ocurrencias": len(v),
+                                 "Posiciones": [{"sequencia": key,
+                                                "posicion": pos+1}
+                                                for pos in v]
+                                                } for key, values in self.patrones.items()
+                                                      for k, v in values.items()]
+                        }
+
+            #    "Patrones": [{
+            #                "Patron": key, 
+            #                "Longitud": len(key),
+            #                "Ocurrencias": len(values),
+            #                "Posiciones":[{"sequencia":self.keys_seqs,
+            #                               "posicion":pos+1}
+            #                              for pos in values]
+            #             } for key, values in self.patrones.items() ]
+            # }
+            #    "Patrones1": [{
+            #            "Patron": k,
+            #            "Longitud": len(k),
+            #            "Ocurrencias": len(v),
+            #            "Posiciones": [{"sequencia": key,
+            #                            "posicion": pos+1}
+            #                           for pos in v]
+            #        } for key, values in self.patrones.items()
+            #          for k, v in values.items()
+            #       ]
+            # }
       # self.keys_seqs.update({key:[{ 
       #                        "longitud":len(key), 
       #                        "Frecuencia":len(values),

@@ -3,7 +3,7 @@ from collections import defaultdict
 
 class GSP(object):
 
-    def __init__(self, ds=[], min_sup=2, pos={}, patrones = {}, keys_seqs ={},debug=False, debugTime = False, csv = False):
+    def __init__(self, ds=[], min_sup=2, pos={}, patrones = {}, keys_seqs = [],debug=False, debugTime = False, csv = False, inputType = '', inputName='', initDateTime=0, finDateTime=0):
         self.ds = ds
         self.min_sup = min_sup
         self.pos = pos
@@ -12,12 +12,16 @@ class GSP(object):
         self.debug = debug
         self.debugTime = debugTime
         self.csv = csv
+        self.inputType = inputType
+        self.inputName = inputName
+        self.initDateTime = initDateTime
+        self.finDateTime = finDateTime
     
-    def set_dbsequence(self, db_sequence=[]):
-      self.db_sequence = db_sequence
+    def set_ds(self, ds=[]):
+      self.ds = ds
 
-    def get_dbsequence(self):
-        return self.db_sequence
+    def get_ds(self):
+        return self.ds
 
     def set_minsup(self, min_sup=0):
         self.min_sup = min_sup
@@ -58,25 +62,47 @@ class GSP(object):
     def update_patrones(self, patrones={}):
         self.patrones.update(patrones)
 
-    def set_key_seq(self, keys_seqs={}):
+    def set_keys_seqs(self, keys_seqs={}):
         self.keys_seqs = keys_seqs
 
-    def get_key_seq(self):
+    def get_keys_seqs(self):
         return self.keys_seqs
 
     def get_lenpos(self):
         return len(self.pos)
 
     def get_lendbsequence(self):
-        return len(self.db_sequence)
+        return len(self.ds)
     
     def set_csv(self,csv):
         self.csv = csv
     
-    def get_cvs(self,csv):
+    def get_cvs(self):
         return self.csv
 
-
+    def set_inputType(self, inputType=''):
+        self.inputType = inputType
+   
+    def get_inputType(self):
+        return self.inputType
+    
+    def set_inputName(self, inputName=''):
+        self.inputName = inputName
+   
+    def get_inputName(self):
+        return self.inputName
+    
+    def set_initDateTime(self, initDateTime=0):
+        self.initDateTime = initDateTime
+   
+    def get_initDateTime(self):
+        return self.initDateTime
+    
+    def set_finDateTime(self, finDateTime=0):
+        self.finDateTime = finDateTime
+   
+    def get_finDateTime(self):
+        return self.finDateTime
 
 
 
@@ -183,11 +209,18 @@ class GSP(object):
     def info_candidates(self):
         key_seq = lambda x: self.keys_seqs[x] if len(self.keys_seqs) else x
         return {"Configuracion": {
-                                "Algoritmo": "GSP",
-                                "min_sup": self.get_minsup(),
-                                "Realizado en": "text/archivo FASTA",
-                                "No. de sequencias ananlizadas": len(self.get_dbsequence()),
-                                "No. Patrones Hallados": len(self.get_patrones())},
+                                    "Algoritmo": "GSP",
+                                    "Siglas": "GSP",
+                                    "Min_sup": self.get_minsup(),
+                                    "Tipo_Entrada": self.get_inputType(),
+                                    "Entrada": self.get_inputName(),
+                                    "Sequencias_ananlizadas": '-'.join(self.get_keys_seqs()),
+                                    "Num_Sequencias_ananlizadas": len(self.get_ds()),
+                                    "Num_Patrones_hallados": len(self.get_patrones()),
+                                    "Fecha_Hora_Inicio": '{}'.format(self.get_initDateTime()),
+                                    "Fecha_Hora_Fin": '{}'.format(self.get_finDateTime()),
+                                    "Duracion": str(self.get_finDateTime() - self.get_initDateTime())
+                                },
                 "Patrones": [{
                            "Patron": key,
                            "Longitud": len(key),

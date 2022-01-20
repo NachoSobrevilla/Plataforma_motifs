@@ -1,20 +1,115 @@
-import Reader
-from algoritmos import BI_n_sequences_copy 
+from os import truncate
+
+from flask.json import jsonify
+import Reader as r
+from algoritmos import BI_n_sequences_copy, BI_copy, gsp
+from datetime  import datetime, timedelta
+import server as s
+import re
+import pandas as pd
+import json
+
+sequence = ['TATTACCTTTTACTTATCTTCGTAGCCCTTTGGATGGCTCTTGTGCCAGTTCCAAGCAGTTGCAATTACATCATCAACATTTTCATGTTTTGGCTTCCAGCCTAAGACTTTACGAGCCTTGCTTGAGTCAGCAACTAAAGAATCAGGATCTCCGCCTCTTCTTGGTCCAATAGTGTAAGGAATGTCAATGCCAGTAACTTTTTTAGCAGCTTCAAGGATTTCTAAGTTTGAGTAGCCTTGAGCAGTACCTAGGTTGAAGACGTCAGACTTGTTAGTTTCCATCACGTGCTTAAGTGCTAAGATGTGAGCGTCAATTAAGTCTTCAACTTGAACGTAGTCGCGGACATTAGTACCGTCTTTAGTGTCATAGTCGTCACCAAAGATAGTAAAGTTGCCATCGCCAGAAATAGCACTCTTTAAGATGTTTGGAATTAAGTGAGTTTCAGGACCATGGTCTTCACCAATTGAACCGTCGCTTGAAGCACCAGCCACATTAAAGTAGCGAAGAGCGATTGACTTAATGCCGTCAGCTTTGTCAGCCCAGTGCATAATCTTTTCCATCATCATCTTGGTTTCGCCATATGGGTTGATTGGATCAAGCGGTGTATATTCAGTAATTGGTAAAGTCTTTGGAATACCGTAAGTTGCAGCAGAAGATGAGAATACTAAGTATTTAACTTTAGCGTCATCCATTGCTTGCAGAAGAGAAATCATACCTGAAACGTTATTGTCGTAGTACTTAAGTGGTTTCTTAACTGATTCAGGAACTAATGAGTAAGCGGCAAAGTGCATTACAGCATCAATGTTTTCATCACGTAAGATTTTGCTTACTAAATTAGTGTCTTCAATATTGCCTTGGTAAAACTTGGCTTTCTTGTCAACAGCCTTTCTATGGCCAGTATAGAGAGAATCAAGGACAACGACATCGTTACCTTCTTCAATTAATTTTCTAACAGCGTGAGAACCAATATAACCGGCCCCACCAATAACTAATACTCGCAT', 
+            'ATGCGAGTATTAGTTATCGGTGGGGCCGGTTATATCGGCTCTCACGCTGTTAGAAAGTTAATTGAAGAAGGTAACGATGTCGTTGTCCTTGATTCTCTCTACACTGGCCACAGAAAGGCTGTTGACAAGAAAGCTAAGTTTTACCAAGGCGATATTGAAGATACTAATTTAGTAAGCAAGATCTTACGTGATGAAAACATTGATGCTGTAATGCACTTCGCCGCTTACTCATTAGTTCCTGAATCAGTTAAGAAACCATTGAAGTACTACGACAATAACGTTTCAGGTATGATTTCTCTTCTGCAAGCAATGGACGACGCTAAAGTTAAGTACTTAGTATTCTCATCTTCTGCTGCAACTTATGGCATTCCAAAGACATTGCCAATTACTGAAGATACACCGCTTGATCCAATCAATCCATACGGTGAAACTAAGATGATGATGGAAAAGATTATGCACTGGGCTGACAAGGCTGACGGCATTAAGTCAATTGCTCTGCGCTACTTTAATGTGGCTGGCGCTTCAAGCGATGGTTCAATTGGTGAAGACCATGGTCCTGAAACTCACTTAATTCCAAACATCTTAAAGAGTGCTATTTCTGGTGATGGCAATTTCACTATTTTTGGTGACGACTATGACACTAAAGACGGTACTAATGTCCGCGACTATGTTCAAGTTGAAGACTTAATTGACGCTCACATCTTAGCACTTAAGCATGTAATGGAAACTAACAAGTCTGATGTCTTTAACTTAGGTACTGCTCAAGGTTACTCAAACTTAGAAATCCTTGAAGCTGCTAAGAAAGTTACTGGCATTGACATTCCTTACACTATTGGACCAAGAAGAGGTGGAGATCCTGATTCCTTAGTTGCTGACTCAAGCAAGGCTCGTAAAGTCTTAGGCTGGAAGCCAAAGCATGAAAATGTTGACGATGTAATCGCAACTGCTTGGAACTGGCACAAGAGCCACCCAAAGGGTTACGAAGATAAGTAAAGGTAATA', 
+            'TAGATAACAGAGTTAGAGAAAGTAGATGAATGATAATGAAGAATTGGCCTAAAAACTGGCGAATTACCTTTGCAGTGATCACAATTGCAATTGGGTTAATCGCAATCTATGCAAACGTCTTTTTGAATAACAGTTCACCATTTAGAACTTGGTCCTACTTAGGACTATTGATTATATTTGCAATAATATATTTTGTTGATCTAAAAACTGATCCTAAGTTTTCAATGCTTGTTGGTTTATTCATGCTAAATTGGATCGATGGTCAAGTATGGTTACCAAGTTTTATTGCGCCATACCGCGGATTGATTTTCACTCTAATTTTCATCTGCATAATAGCAATGGAAATTTATAGCATTATTAACTGGCGTAGATATAAGAAAAATAATCGTTAATAAAAATAAAACCACTATTCAACGTCAAATTGAATAGTGGTTTTATTTTTTAAAAAACTTTGCACACATGCAAAACGGGTTGCATTAACATAGACCTTTGGTATTCTAGCAATGACCTGACTTATTCATTTACAAAATCAGAAAGGATCAAAATTTTGAAAAAGAAGCTTCAAATTAGTTTATTCATCATCTCACTGATCTTATCTATAGCTGCTTTCAATGTATTGTTAACATGCATGTCCAAGAACACCTTTAACATTAAAGATATACCCATCTTTCTCTATGTCATATGTATTTTGATTACTGGAATCTTAATTCTATTTCCTAAACTAAATTATCTAATGATGTTAATTTCTACAGCTTTATTAATAATCACCATAGCTACCTAGATCAAGTTCCTAGAAATAAGCGTCATCTATACACCATTCATCGCCTACCTAGTACTATGCTCATTGGCAGGTTACTATTCAACCAAAAGAAAAAGATCATAAGTTAAATATGTTTACTAAACGAGAATTAAAAATCATTACTAACATTATTATCATAAGCTAAGCTATATCATAGTTTTAGGGCCAACCTTCATTTTTGGTTTCACCAAAACAGATAATT']
+min_sup = 3
+b = BI_n_sequences_copy.basado_indices_sequencial(db_sequence=sequence, min_sup=3, debug=True, csv=True)
+b.run()
+json_result = json.loads(json.dumps(b.info_patrones()))
+df = pd.json_normalize(json_result)
+df.to_csv("busqueda_errores.csv")
+print("".join("{}\t".format(b.info_patrones())))
 
 
-read = Reader(filesnames='Plataforma_motifs\sequencias_prueba\sequence (1).fasta')
 
-list_sequence, headline = read.run()
-bi = BI_n_sequences_copy()
+# read = Reader(filesnames='Plataforma_motifs\sequencias_prueba\sequence (1).fasta')
 
-bi = bi.basado_indices(min_sup=2)
+# list_sequence, headline = read.run()
+# bi = BI_n_sequences_copy()
 
-for sequence, head in list_sequence, headline:
-    bi.set_dbsequence(sequence)
-    bi.set_pos(bi.find_pos())
+# bi = bi.basado_indices(min_sup=2)
 
-    candidates = bi.run()
+#     for sequence, head in list_sequence, headline:
+#         bi.set_dbsequence(sequence)
+#         bi.set_pos(bi.find_pos())
 
-    print(head)
-    print('\n', 'Patrones Hallados: ', ', '.join(str(c) for c in candidates))
-    print('\n')
+#         candidates = bi.run()
+
+#         print(head)
+#         print('\n', 'Patrones Hallados: ', ', '.join(str(c) for c in candidates))
+#         print('\n')
+
+####-Otra prueba
+# sequence = ['ACGTGTAAAACTCTTGTT', 'CTAAGTCCGTAGCCGACT', 'GGATCCAATCGCTAATCG']
+# min_sup = 3
+# b = BI_copy.basado_indices()
+
+# b = bi.basado_indices()
+
+
+# for i in range(len(sequence)):
+#     b.set_sequence(sequence[i])
+#     b.set_minsup(min_sup)
+#     b.set_seqCode(i)
+#     b.set_pos(b.find_pos())
+#     b.run()
+
+# b.set_sequence(sequence[0])
+# b.set_minsup(min_sup)
+# b.set_pos(b.find_pos())
+# b.run()
+
+# patrones = b.get_patrones()
+# # print(b.get_patrones())
+
+# resultado = {  "Patrones1": [{
+#             "Patron": k,
+#             "Longitud": len(k),
+#             "Ocurrencias": len(v),
+#             "Posiciones": [{"sequencia": key,
+#                             "posicion": pos+1}
+#                             for pos in v]
+#         } for key, values in patrones.items()
+#             for k, v in values.items()
+#         ]
+#     }
+
+# print(resultado)
+
+
+
+
+# patrones = {}
+# gsp = gsp.GSP(sequence, min_sup, inputType="prueba",
+#               initDateTime=datetime.now())
+# gsp.run()
+# gsp.set_finDateTime(datetime.now())
+# patrones = gsp.info_candidates()
+
+# print(patrones)
+
+
+# dt = datetime.strptime("2022-01-02 22:11:34.237049", '%Y-%m-%d %H:%M:%S.%f')
+# dt1 = datetime.strptime("2022-01-04 22:10:34.237041", '%Y-%m-%d %H:%M:%S.%f')
+# dt2 = dt1-dt
+# print(dt2)
+# print(dt2.seconds)
+# print(dt2.days*86400)
+
+# sdt = str(dt2)
+# x = [i for i in re.split("[ ,:.]",sdt) if i.isdigit() or i.isdecimal()]
+# print(x)
+# print(int(x[0])*86400)
+# print(int(x[1])*3600)
+# print(int(x[2])*60)
+# print(x[3])
+# print()
+# ms = str(x[4])
+# ms += '00'
+# print(ms[:4])
+# ms1 = '9'
+# print(ms1[:4])
+# dt3 = timedelta(days=x[0], hours= x[1], minutes= x[2], seconds= x[3], milliseconds=x[4])
+# dt3 = timedelta(seconds=((x[0]*86400)+(x[1]*3600)+(x[2]*60)+x[3]))
+# print(str(dt3))
+

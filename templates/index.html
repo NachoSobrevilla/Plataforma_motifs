@@ -1,60 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <title>Descubrimiento de motifs en secuencias de ADN con mineria de patrones frecuentes</title>
-    
-    <link type='text/css' href="{{url_for('static', filename = 'css/normalize.css')}}"  rel="stylesheet">
-    <!-- <link href="css/styles.css?1.0" rel="stylesheet" type="text/css" media="all"> -->
+
+    <!--Normalize-->
+    <!-- <link type='text/css' href="{{url_for('static', filename = 'css/normalize.css')}}" rel="stylesheet"> -->
+    <link type='text/css' href="../static/css/normalize.css" rel="stylesheet">
+
+    <!--Estilos personalizados-->
+    <!-- <link href="../static/css/styles.css" rel="stylesheet" type="text/css" media="all"> -->
+
+    <!-- Bootstrap CSS -->
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous"> -->
+    <link rel="stylesheet" href="../static/css/bootstrap.min.css">
+
     <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.11.2/css/all.css">
+    <!-- Google Fonts Roboto -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+
+    <!--Funetes especificas de google-->
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script type ='text/javascript' src="{{url_for('static', filename = 'js/functions.js')}}"></script>
+
+    <!--Iconos de google-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- MDBootstrap
+    <link rel="stylesheet" href="../static/css/mdb.min.css"> -->
+
+    <!-- MDBootstrap Datatables  css -->
+    <link href="../static/css/addons/datatables.min.css" rel="stylesheet">
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous">
+    </script>
+
+    <!--Popper-->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+        integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous">
+    </script> -->
+    <script src="../static/js/popper.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"
+        integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous">
+    </script> -->
+    <script src="../static/js/bootstrap.min.js"></script>
+
+    <!-- JQuery  -->
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script> -->
+    <script src="../static/js/jquery-3.6.0.min.js"></script>
+
+    <!-- MDBootstrap JS
+    <script src="../static/js/mdb.min.js"></script> -->
+
+    <!-- MDBootstrap Datatables  js -->
+    <script src="../static/js/addons/datatables.min.js"></script>
+
+    <!--Funciones JS propias-->
+    <!-- <script type='text/javascript' src="{{url_for('static', filename = 'js/functions.js')}}"></script> -->
+    <script type='text/javascript' src="../static/js/functions.js"></script>
+
+
+
+
     <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>-->
 
 
 </head>
+
 <body>
-    <header class="align-content-center justify-content-center mx-4 p-4 container" >
-        <h1 class="h2 display-4 text-justify font-weight-light">
-            Descubrimiento de motifs en secuencias de ADN con mineria de patrones frecuentes  
+    <header class="justify-content-center d-flex px-4 mx-4 py-2 my-2">
+        <h1 class="h1 display-4 text-break text-center font-weight-light">
+            Descubrimiento de motifs en secuencias de <br> ADN con mineria de patrones frecuentes
         </h1>
-        
+
     </header>
 
 
 
-    <div class="align-content-center justify-content-center mx-4 p-4 container" >
+    <div class="justify-content-center container-fluid px-4 mx-4 py-2 my-2">
         <p class="text-justify lead">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi rem fuga neque adipisci optio, dolor ipsum rerum aspernatur praesentium eligendi dolorem beatae error harum cum nihil numquam nobis consectetur possimus?
+            Esta plataforma está enfocada al descubrimiento de motifs en secuencias de ADN con minería de patrones
+            frecuentes.
+            <br>
+            Proyecto realizado en la Universidad Autónoma del Estado de Hidalgo - MCCAyE.
         </p>
     </div>
-        
-    <main class="align-content-center justify-content-center mx-4 p-4 container" >
+
+    <main class="justify-content-center px-4 mx-4 py-2 my-2">
         <section>
-            <ul id='tabs' class="nav nav-tabs nav-justified navbar-expand">
-                <li class="active"><a data-toggle="tab" href="#process">Ejecución</a></li>
-                <li><a data-toggle="tab" href="#experiments">Experimentos</a></li>
+            <ul id='tabs' class="nav nav-tabs nav-justified">
+                <!-- navbar-expand nav-justified -->
+                <li class="nav-item active"><a class="nav-link" data-toggle="tab" href="#process" title="">
+                        <h3 class="h4 text-dark">Ejecución</h3>
+                    </a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#experiments">
+                        <h3 class="h4 text-dark">Experimentos</h3>
+                    </a></li>
             </ul>
 
 
-            <div class="tab-content">    <!--Contenedor de tabs-->
-                <div id="process" class="tab-pane fade in active"> <!--Panel de elementos para la ejecucion (Parametos y resultados)-->
-                    <h2 class="text-muted display-4">Entrada de datos</h2>
-                    <div class="container-fluid">
+            <div class="border-right border-bottom border-left tab-content ">
+                <!--Contenedor de tabs-->
+                <div class="tab-pane container-fluid in active" id="process">
+                    <!--Panel de elementos para la ejecucion (Parametros y resultados)-->
+
+                    <!-- <div id='CargaGeneral'> -->
+                    <!-- Div de carga  para elementos de ejecición -->
+                    <!-- <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Cargando...</span>
+                        </div>
+                    </div>  -->
+
+                    <div id="contentprocess" class="container-fluid">
+                        <!--Seccion de entrada-->
+                        <h2 class="h4 text-secondary text-center px-2 mx-2">Entrada de datos</h2>
                         <form class="form-inline">
                             <fieldset>
-                                <div class="form-group form-row m-2" id='initOptions'>
+                                <!-- <div class="form-group form-row m-2" id='initOptions'>
                                     <label class="text-xl-left mx-2" for="selectAlgorithm">Tipo de algoritmo</label>
                                     <select class="form-control-sm  mx-2" id="selectAlgorithm" onchange="" aria-valuenow="-1">
                                         <option value="gsp">GSP</option>
@@ -66,88 +140,165 @@
                                 <div class="form-group form-row m-2" id='initOptions'> 
                                     <label class='mx-2' for="minSup">Umbral (minimo soporte)</label>
                                     <input class='mx-2'type="number" id="minSup" name="minSup" max="50" min="1" value="1">
-                                </div>
+                                </div> -->
 
                                 <div class="form-group form-row m-2" id='Options'>
-                                    <label class="text-xl-left  mx-2" for="formControlInputSelect">Opciones de entrada</label>
-                                    <select class="form-control-sm  mx-2" id="formControlInputSelect" onchange="selectProccess()">
+                                    <label class="text-xl-left  mx-2" for="formControlInputSelect">Opciones de
+                                        entrada</label>
+                                    <select class="form-control-sm  mx-2" id="formControlInputSelect"
+                                        onchange="selectProccess()">
                                         <option value="inputManual">Ingresar Manualmente</option>
                                         <option value="inputFile">Subir archivo de tipo FASTA</option>
                                         <!-- <option value="inputDB">Desde una base de datos biologica (Genbank)</option> -->
                                     </select>
+                                    <span id="infoProceso" class="material-icons mx-2"
+                                        title="Seleccione un método de entrada">info</span>
                                 </div>
                             </fieldset>
                         </form>
                     </div>
-                
 
-                    <div class="d-flex flex-row justify-content-start">
-                        <form class="container-xl" id="principalFormTxt">
-                                <div class="form-group row" id='inputManualRow' >
-                                    <fieldset>
-                                        <label for="inputManualADNText">Ingrese la secuencia de ADN</label>
-                                        <!-- <input type="text" class="form-control-plaintext border-info border-left border-right rounded" id="inputManualADNText" placeholder="    ACTG"> -->
-                                        <textarea class="form-control" id="inputManualADNText" rows="1" placeholder="ACTG" style="resize: none;"></textarea>
-                                        
-                                        <button type="button" class="form-control btn btn-dark  btn-sm my-2" id="addSequence" onclick="addStringSequences()">Agregar</button>
 
-                                        <textarea class="form-control" id="previsualSequenceAnalisis" rows="5" placeholder="Previsualización" readonly></textarea>
-                                        <br>
-                                        <!-- <button type="button" class="btn btn-dark form-control my-2" id="addSequence1" disabled hidden>Agregar</button> -->
+                    <div id='inputs' class="d-flex row">
+                        <form class="row container-fluid m-2" id="principalFormTxt">
+                            <!--Formulario para ingresar secuencias-->
+                            <div class="form-group" id='inputManualRow'>
+                                <fieldset>
+                                    <label for="inputManualADNText">Ingrese la secuencia de ADN</label>
+                                    <span id="infoManual" class="material-icons mx-2" title="Teclee la(s) secuencia(s) de ADN que desee analizar.">info</span>
+                                    <!-- <input type="text" class="form-control-plaintext border-info border-left border-right rounded" id="inputManualADNText" placeholder="    ACTG"> -->
+                                    <input type="text" class="form-control" id="inputManualADNText" rows="1"
+                                        placeholder="ACTG" style="resize: none;">
 
-                                        <button type="button" class="btn btn-info form-control btn-lg my-2" id="sendSequenceTxt">Iniciar Análisis</button>
-                                    </fieldset>
-                                </div>
-                            
-                        </form>    
-                        
-                        <form class="container-xl" id="principalFormFile">
-                            <fieldset>
-                                <div class="form-group row" id='inputFileRow'>
-                                    <label for="inputFile">Ingrese archivo FASTA</label>
-                                    <input type="file" class="form-control-file" id="inputFile" name = 'inputFile' accept=".fasta"> <!--multiple-->
-                                </div>
-                                <div class="form-group row" id='inputFileRow2'>
-                                    <textarea class="form-control my-2" id="previsualSequenceAnalisisFile" rows="5" placeholder="Previsualización" readonly hidden></textarea>
-                                    <button type="button" class="btn btn-info form-control btn-lg my-2" id="sendSequenceFile">Iniciar Análisis</button>
-                                </div> 
-                            </fieldset>
-                            
+                                    <button type="button" class="form-control btn btn-dark  btn-sm my-2"
+                                        id="addSequence" onclick="addStringSequences()">Agregar</button>
+
+                                    <textarea class="form-control" id="previsualSequenceAnalisis" rows="1"
+                                        placeholder="Previsualización" readonly></textarea>
+
+                                    <button type="button" class="form-control btn btn-danger  btn-sm my-2"
+                                        id="cleanSequence" onclick="cleanStringSequences()">Borrar secuencias</button>
+                                    <!-- <button type="button" class="btn btn-dark form-control my-2" id="addSequence1" disabled hidden>Agregar</button> -->
+
+                                    <!-- <button type="button" class="btn btn-info form-control btn-lg my-2" id="sendSequenceTxt">Iniciar Análisis</button> -->
+                                </fieldset>
+                            </div>
                         </form>
-                            <!-- <div class="form-group border-3 border-info row" id="inputDBGenbankRow"> 
+
+                        <form class="row container-fluid m-2" id="principalFormFile">
+                            <!--formulario para subir archivos-->
+                            <fieldset>
+                                <div class="form-group row m-2" id='inputFileRow'>
+                                    <label for="inputFile">Ingrese archivo FASTA</label>
+                                    <span id="infoArchivos" class="material-icons mx-2" title="Seleccione un archivo FASTA que contenga la(s) secuencia(s) de ADN que desee analizar.">info</span>
+                                    
+                                    <input type="file" class="form-control-file" id="inputFile" name='inputFile' accept=".fasta" draggable="true">
+                                    <!--multiple-->
+                                </div>
+                                <div class="form-group row m-2" id='inputFileRow2'>
+                                    <textarea class="form-control my-2" id="previsualSequenceAnalisisFile" rows="10"
+                                        placeholder="Previsualización" readonly></textarea>
+                                    <!-- <button type="button" class="btn btn-info form-control btn-lg my-2" id="sendSequenceFile">Iniciar Análisis</button> -->
+                                </div>
+                            </fieldset>
+
+                        </form>
+
+                        <form class="row container-fluid m-2" id="configAlgorithm">
+                            <!--formulario para configurar el algoritmo-->
+                            <fieldset>
+                                <div class="form-group form-row m-2 align-middle" id='initOptions'>
+                                    <label class="text-xl-left " for="selectAlgorithm">Tipo de algoritmo</label>
+                                    <select class="form-control-sm  mx-2" id="selectAlgorithm" onchange="infoSelectAlgorithm()"
+                                        aria-valuenow="-1">
+                                        <option id="opc_bi" value="bi">Basado en indices</option>
+                                        <option id="opc_bi+" value="bi+">Basado en indices en multiples sequencias
+                                        </option>
+                                        <option id="opc_gsp" value="gsp">GSP</option>
+                                    </select>
+                                    <span id="infoAlgoritmo" class="material-icons" title="">info</span>
+                                </div>
+
+                                <div class="form-group form-row m-2 align-middle" id='initOptions'>
+                                    <label class='' for="minSup">Umbral (minimo soporte)</label>
+                                    <input class='mx-2' type="number" id="minSup" name="minSup" max="" min="2" value="">
+                                    <span id="infoMinSup" class="material-icons" title="">info</span>
+                                </div>
+
+                                <br>
+
+                                <button type="button" class="btn btn-info form-control btn-lg m-2"
+                                    id="sendSequenceFile">Iniciar Análisis</button>
+
+                                <button type="button" class="btn btn-info form-control btn-lg m-2"
+                                    id="sendSequenceTxt">Iniciar Análisis</button>
+
+                                <!-- <div class="form-group row" id='inputPricipalRows'> -->
+                                <!-- <textarea class="form-control my-2" id="previsualSequenceAnalisisFile" rows="5" placeholder="Previsualización" readonly hidden></textarea> -->
+                                <!-- <button type="button" class="btn btn-info form-control btn-lg my-2" id="sendSequenceGeneral">Iniciar Análisis</button> -->
+                                <!-- </div>  -->
+
+                            </fieldset>
+
+                        </form>
+
+                        <!-- <div class="form-group border-3 border-info row" id="inputDBGenbankRow"> 
                                 
                             </div> -->
 
-                            <!-- <div class="form-group"  id="btnInit" >
+                        <!-- <div class="form-group"  id="btnInit" >
                                 <button type="button" class="btn btn-info form-control btn-lg my-2" id="sendSequence">Iniciar Análisis</button> -->
-                                <!-- <input type="submit" class="btn btn-info form-control btn-lg my-2" id="sendSequence" > -->
-                                <!-- <a href="result.html" class="btn btn-info btn-lg active p-2" role="button" aria-pressed="true" id='ingreso'>Iniciar Análisis</a> -->
+                        <!-- <input type="submit" class="btn btn-info form-control btn-lg my-2" id="sendSequence" > -->
+                        <!-- <a href="result.html" class="btn btn-info btn-lg active p-2" role="button" aria-pressed="true" id='ingreso'>Iniciar Análisis</a> -->
 
-                            <!-- <div> --> 
+                        <!-- <div> -->
                     </div>
-                    
+
+
+
                     <!--muestra de resultados-->
-                    <div class="d-flex flex-column justify-content-center mx-2 p-4">
-                        
+                    <div class="d-flex flex-column justify-content-center mx-2 p-2">
+
+                        <div id='cargaResultado' class="d-flex justify-content-center">
+                            <div id='cargaResultadoChil' class="flex-column mx-2 p-2">
+                                <div class="spinner-border text-primary"
+                                    style="height: 6rem; width: 6rem; border-width: .75rem;" role="status">
+                                    <!--modificar el tamaño del border-->
+                                    <span class="sr-only">Cargardo...</span>
+                                </div>
+                                <p class="text-center">Cargando</p>
+                            </div>
+                        </div>
+
                         <div class="container container-xl align-content-center" id="patronesHallados">
 
 
+
                         </div>
-                
+
+                        <!-- <button  type="button" class="btn btn-info form-control btn-lg my-2" id="downCurrentFile" onclick="descargarArchivos('x','currentJSON')">Descargar resultados</button> -->
+                        <!-- <a href=/descarga/experimentos/{{currentJSON}} class="btn btn-info form-control btn-lg my-2" id="downCurrentFile" target="_blank">Descargar resultados</a> -->
+                        <!-- <a href="{{ url_for('getExpetimento', filetype = 'currentJSON') }}" class="btn btn-info form-control btn-lg my-2" id="downCurrentFile" target="_blank">Descargar resultados</a>  -->
+
+
                     </div>
-            
-                    <div id="PatternsModal" class="modal fade" role="dialog"> <!--Modal-->
+
+                    <div id="PatternsModal" class="modal fade" role="dialog">
+                        <!--Modal-->
                         <div class="modal-dialog">
-                            
-                            <div class="modal-content"> <!--Contenedor del modal-->
-                                <div class="modal-header"> <!--encabezado-->
-                                     
-                                    <h4 class="modal-title">Posiciones del Patrón</h4> <!--Titulo-->
+
+                            <div class="modal-content">
+                                <!--Contenedor del modal-->
+                                <div class="modal-header">
+                                    <!--encabezado-->
+
+                                    <h4 class="modal-title">Posiciones del Patrón</h4>
+                                    <!--Titulo-->
                                     <button type="button" class="close" data-dismiss="modal">&times;</button>
-                                   
+
                                 </div>
                                 <div class="modal-body" id="pmodal-body">
-                                    
+
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-light" data-dismiss="modal"></button>
@@ -162,33 +313,78 @@
                     <!-- <div class="d-flex flex-column justify-content-center mx-2 p-4 container">
                         <form class="container-xl" id="resultForm">
                             <div class="form-group"> -->
-                                <!-- <button type="button" class="btn btn-info form-control btn-lg my-2" id='exportPDF' hidden></button> -->
-                            <!-- </div>
+                    <!-- <button type="button" class="btn btn-info form-control btn-lg my-2" id='exportPDF' hidden></button> -->
+                    <!-- </div>
                         </form>
                     </div> -->
                     <!--fin de muestra de resultados-->
 
-                </div>  <!--fin del panel de elementos para la ejecucion (Parametos y resultados)-->
+                </div>
+                <!--fin del panel de elementos para la ejecucion (Parametos y resultados)-->
 
-                <div id="experiments" class="tab-pane fade"> <!--panel de archivos-->
-                    <button type="button" class="btn btn-info" onclick="mostrarArchivos()">Actualizar</button>
-                    <div class="d-flex flex-column justify-content-center mx-2 p-4" id="mostrarArchivos">
+                <div class="tab-pane container-fluid fade " id="experiments">
+                    <!--panel de archivos-->
+                    <div class="d-flex flex-column justify-content-center mx-2 p-2" id="mostrarArchivos">
 
                     </div>
-                </div> <!--fin del panel de archivos-->
-            </div> <!--fin de tab principal-->
-        </section>
 
+                    <div class="d-flex flex-column justify-content-center m-2">
+                        <button type="button" class="btn btn-info" onclick="mostrarArchivos()">Actualizar</button>
+                    </div>
+
+                    <div id="PatternsModalFiles" class="modal fade" role="dialog">
+                        <!--Modal-->
+                        <div class="modal-dialog">
+
+                            <div class="modal-content">
+                                <!--Contenedor del modal-->
+                                <div class="modal-header">
+                                    <!--encabezado-->
+
+                                    <h4 class="modal-title" id="titleModalFile"></h4>
+                                    <!--Titulo-->
+                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+
+                                </div>
+                                <div class="modal-body" id="pmodalFile-body">
+                                    <pre id="preModalFile">
+
+                                    </pre>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-light" data-dismiss="modal">Aceptar</button>
+                                </div>
+
+                            </div>
+
+
+                        </div>
+                    </div>
+
+                </div>
+                <!--fin del panel de archivos-->
+            </div>
+            <!--fin de tab principal-->
+        </section>
+        <!-- 
         <section> 
 
-        </section>
+        </section> -->
 
 
 
     </main>
     <footer>
-        
+        <div class="container-fluid mx-4 p-4">
+            <p class="text-center lead">
+                Esta plataforma está en fase de desarrollo.
+                <br>
+                versión 0.1 (experimental)
+            </p>
+        </div>
     </footer>
 
+
 </body>
+
 </html>
