@@ -192,7 +192,7 @@ class basado_indices_sequencial(object):
          print('\n', 'Patrones Hallados: ', ', '.join(str(c) for c in self.get_only_patrones()))
       
       print("#patron_hallados: "+len(self.patrones.keys()))
-      
+      i+=1
       # return candidates
       
       
