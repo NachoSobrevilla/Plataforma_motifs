@@ -1,9 +1,11 @@
+from datetime import datetime
 import pandas as pd
 
 from collections import defaultdict
 from time import time
 from typing import DefaultDict
-
+from .clsGntCode import clsGeneticCode as gc
+traductor = gc('')
 
 class basado_indices(object):
 
@@ -111,13 +113,13 @@ class basado_indices(object):
    def get_seqCode(self):
       return self.seq_code
    
-   def set_initDateTime(self, initDateTime=0):
+   def set_initDateTime(self, initDateTime=datetime.now()):
         self.initDateTime = initDateTime
 
    def get_initDateTime(self):
         return self.initDateTime
     
-   def set_finDateTime(self, finDateTime=0):
+   def set_finDateTime(self, finDateTime=datetime.now()):
         self.finDateTime = finDateTime
    
    def get_finDateTime(self):
@@ -366,7 +368,14 @@ class basado_indices(object):
 
 
       # return self.pos.keys()
-
+   def traductorCodon(self, codon):
+      global traductor
+      if len(codon) > 2:
+         traductor.setCodon(codon)
+         return traductor.getCodonCoded()
+      else:
+         return ''
+      
    def info_patrones(self):
       return {"Configuracion": {
                                  "Algoritmo": "Basado en indices",
@@ -385,6 +394,7 @@ class basado_indices(object):
                                  "Patron": k,
                                  "Longitud": len(k),
                                  "Ocurrencias": len(v),
+                                 "Traduccion_aminoacido": self.traductorCodon(key),
                                  "Posiciones": [{"sequencia": key,
                                                 "posicion": pos+1}
                                                 for pos in v]

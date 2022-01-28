@@ -1,5 +1,14 @@
-from collections import defaultdict
+from datetime import datetime
+import sys
+import os
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+print(SCRIPT_DIR)
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from .clsGntCode import clsGeneticCode as gc
+from collections import defaultdict
+traductor = gc('')
 
 class basado_indices_sequencial(object):
 
@@ -92,13 +101,13 @@ class basado_indices_sequencial(object):
    def get_inputName(self):
       return self.inputName
    
-   def set_initDateTime(self, initDateTime=0):
+   def set_initDateTime(self, initDateTime=datetime.now()):
         self.initDateTime = initDateTime
 
    def get_initDateTime(self):
       return self.initDateTime
    
-   def set_finDateTime(self, finDateTime=0):
+   def set_finDateTime(self, finDateTime=datetime.now()):
       self.finDateTime = finDateTime
 
    def get_finDateTime(self):
@@ -126,7 +135,7 @@ class basado_indices_sequencial(object):
       
 
       while self.get_lenpos() != 0:
-         # print('entra')
+         print('entra iteracion '+i)
          
             
          # for key, values in self.pos.items():  # Para cada candidato y sus posiciones
@@ -181,6 +190,8 @@ class basado_indices_sequencial(object):
 
       if self.get_debug() == True:
          print('\n', 'Patrones Hallados: ', ', '.join(str(c) for c in self.get_only_patrones()))
+      
+      print("#patron_hallados: "+len(self.patrones.keys()))
       
       # return candidates
       
@@ -361,8 +372,17 @@ class basado_indices_sequencial(object):
       r_values = defaultdict(list)
       pass
 
+   def traductorCodon(self, codon):
+      global traductor
+      if len(codon) > 2:
+         traductor.setCodon(codon)
+         return traductor.getCodonCoded()
+      else:
+         return ''
+      
    def info_patrones(self):
       key_seq = lambda x: self.keys_seqs[x] if len(self.keys_seqs) else x
+      
       return { "Configuracion": {
                                  "Algoritmo":"Basado en indices en multiples sequencias",
                                  "Siglas": "BIMS",
@@ -380,6 +400,7 @@ class basado_indices_sequencial(object):
                               "Patron": key,
                               "Longitud": len(key),
                               "Ocurrencias": len(values),
+                              "Traduccion_aminoacido": self.traductorCodon(key),   #.getCodonCoded(),
                               "Posiciones": [{
                                              "sequencia": key_seq(seq),
                                              "posicion": p+1}
@@ -432,17 +453,23 @@ class basado_indices_sequencial(object):
 #             'CTAAGTCCGTAGCCGACT',
 #             'GGATCCAATCGCTAAT-CG']
 
-# # sequence = ['ACGTGTAAAACTCTTGTT', 
-# #           'CTAAGTCCGTAGCCGACT']
-# min_sup = 2
 
-# bi = basado_indices_sequencial(db_sequence=sequence, min_sup=min_sup, debug=True)
-# bi.set_pos(bi.find_pos())
-# bi.run()      
-# # print("\n")
-# # print(bi.get_keys_seqs())
-# print("\n")
-# print(bi.get_patrones())
-# print("\n")
-# print(bi.info_patrones())
+   
+  
+# def main():     
+#    sequence = ['ACGTGTAAAACTCTTGTT', 
+#             'CTAAGTCCGTAGCCGACT']
+#    min_sup = 2
 
+#    bi = basado_indices_sequencial(db_sequence=sequence, min_sup=min_sup, debug=True)
+#    bi.set_pos(bi.find_pos())
+#    bi.run()      
+#    # # print("\n")
+#    # # print(bi.get_keys_seqs())
+#    # print("\n")
+#    # print(bi.get_patrones())
+#    # print("\n")
+#    print(bi.info_patrones())
+
+# if __name__ == '__main__':
+#    main()

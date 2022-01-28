@@ -1,5 +1,13 @@
-from os import truncate
 
+# from os import truncate
+import sys
+import os
+
+from click import FileError, exceptions
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+import time
 from flask.json import jsonify
 import Reader as r
 from algoritmos import BI_n_sequences_copy, BI_copy, gsp
@@ -9,16 +17,138 @@ import re
 import pandas as pd
 import json
 
-sequence = ['TATTACCTTTTACTTATCTTCGTAGCCCTTTGGATGGCTCTTGTGCCAGTTCCAAGCAGTTGCAATTACATCATCAACATTTTCATGTTTTGGCTTCCAGCCTAAGACTTTACGAGCCTTGCTTGAGTCAGCAACTAAAGAATCAGGATCTCCGCCTCTTCTTGGTCCAATAGTGTAAGGAATGTCAATGCCAGTAACTTTTTTAGCAGCTTCAAGGATTTCTAAGTTTGAGTAGCCTTGAGCAGTACCTAGGTTGAAGACGTCAGACTTGTTAGTTTCCATCACGTGCTTAAGTGCTAAGATGTGAGCGTCAATTAAGTCTTCAACTTGAACGTAGTCGCGGACATTAGTACCGTCTTTAGTGTCATAGTCGTCACCAAAGATAGTAAAGTTGCCATCGCCAGAAATAGCACTCTTTAAGATGTTTGGAATTAAGTGAGTTTCAGGACCATGGTCTTCACCAATTGAACCGTCGCTTGAAGCACCAGCCACATTAAAGTAGCGAAGAGCGATTGACTTAATGCCGTCAGCTTTGTCAGCCCAGTGCATAATCTTTTCCATCATCATCTTGGTTTCGCCATATGGGTTGATTGGATCAAGCGGTGTATATTCAGTAATTGGTAAAGTCTTTGGAATACCGTAAGTTGCAGCAGAAGATGAGAATACTAAGTATTTAACTTTAGCGTCATCCATTGCTTGCAGAAGAGAAATCATACCTGAAACGTTATTGTCGTAGTACTTAAGTGGTTTCTTAACTGATTCAGGAACTAATGAGTAAGCGGCAAAGTGCATTACAGCATCAATGTTTTCATCACGTAAGATTTTGCTTACTAAATTAGTGTCTTCAATATTGCCTTGGTAAAACTTGGCTTTCTTGTCAACAGCCTTTCTATGGCCAGTATAGAGAGAATCAAGGACAACGACATCGTTACCTTCTTCAATTAATTTTCTAACAGCGTGAGAACCAATATAACCGGCCCCACCAATAACTAATACTCGCAT', 
-            'ATGCGAGTATTAGTTATCGGTGGGGCCGGTTATATCGGCTCTCACGCTGTTAGAAAGTTAATTGAAGAAGGTAACGATGTCGTTGTCCTTGATTCTCTCTACACTGGCCACAGAAAGGCTGTTGACAAGAAAGCTAAGTTTTACCAAGGCGATATTGAAGATACTAATTTAGTAAGCAAGATCTTACGTGATGAAAACATTGATGCTGTAATGCACTTCGCCGCTTACTCATTAGTTCCTGAATCAGTTAAGAAACCATTGAAGTACTACGACAATAACGTTTCAGGTATGATTTCTCTTCTGCAAGCAATGGACGACGCTAAAGTTAAGTACTTAGTATTCTCATCTTCTGCTGCAACTTATGGCATTCCAAAGACATTGCCAATTACTGAAGATACACCGCTTGATCCAATCAATCCATACGGTGAAACTAAGATGATGATGGAAAAGATTATGCACTGGGCTGACAAGGCTGACGGCATTAAGTCAATTGCTCTGCGCTACTTTAATGTGGCTGGCGCTTCAAGCGATGGTTCAATTGGTGAAGACCATGGTCCTGAAACTCACTTAATTCCAAACATCTTAAAGAGTGCTATTTCTGGTGATGGCAATTTCACTATTTTTGGTGACGACTATGACACTAAAGACGGTACTAATGTCCGCGACTATGTTCAAGTTGAAGACTTAATTGACGCTCACATCTTAGCACTTAAGCATGTAATGGAAACTAACAAGTCTGATGTCTTTAACTTAGGTACTGCTCAAGGTTACTCAAACTTAGAAATCCTTGAAGCTGCTAAGAAAGTTACTGGCATTGACATTCCTTACACTATTGGACCAAGAAGAGGTGGAGATCCTGATTCCTTAGTTGCTGACTCAAGCAAGGCTCGTAAAGTCTTAGGCTGGAAGCCAAAGCATGAAAATGTTGACGATGTAATCGCAACTGCTTGGAACTGGCACAAGAGCCACCCAAAGGGTTACGAAGATAAGTAAAGGTAATA', 
-            'TAGATAACAGAGTTAGAGAAAGTAGATGAATGATAATGAAGAATTGGCCTAAAAACTGGCGAATTACCTTTGCAGTGATCACAATTGCAATTGGGTTAATCGCAATCTATGCAAACGTCTTTTTGAATAACAGTTCACCATTTAGAACTTGGTCCTACTTAGGACTATTGATTATATTTGCAATAATATATTTTGTTGATCTAAAAACTGATCCTAAGTTTTCAATGCTTGTTGGTTTATTCATGCTAAATTGGATCGATGGTCAAGTATGGTTACCAAGTTTTATTGCGCCATACCGCGGATTGATTTTCACTCTAATTTTCATCTGCATAATAGCAATGGAAATTTATAGCATTATTAACTGGCGTAGATATAAGAAAAATAATCGTTAATAAAAATAAAACCACTATTCAACGTCAAATTGAATAGTGGTTTTATTTTTTAAAAAACTTTGCACACATGCAAAACGGGTTGCATTAACATAGACCTTTGGTATTCTAGCAATGACCTGACTTATTCATTTACAAAATCAGAAAGGATCAAAATTTTGAAAAAGAAGCTTCAAATTAGTTTATTCATCATCTCACTGATCTTATCTATAGCTGCTTTCAATGTATTGTTAACATGCATGTCCAAGAACACCTTTAACATTAAAGATATACCCATCTTTCTCTATGTCATATGTATTTTGATTACTGGAATCTTAATTCTATTTCCTAAACTAAATTATCTAATGATGTTAATTTCTACAGCTTTATTAATAATCACCATAGCTACCTAGATCAAGTTCCTAGAAATAAGCGTCATCTATACACCATTCATCGCCTACCTAGTACTATGCTCATTGGCAGGTTACTATTCAACCAAAAGAAAAAGATCATAAGTTAAATATGTTTACTAAACGAGAATTAAAAATCATTACTAACATTATTATCATAAGCTAAGCTATATCATAGTTTTAGGGCCAACCTTCATTTTTGGTTTCACCAAAACAGATAATT']
-min_sup = 3
-b = BI_n_sequences_copy.basado_indices_sequencial(db_sequence=sequence, min_sup=3, debug=True, csv=True)
-b.run()
-json_result = json.loads(json.dumps(b.info_patrones()))
-df = pd.json_normalize(json_result)
-df.to_csv("busqueda_errores.csv")
-print("".join("{}\t".format(b.info_patrones())))
+x = "Plataforma_motifs\\sequencias_prueba\\"
+y = "sequence_orange_Citrus sinensis_3_100M.fasta"
+z = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\"
+
+def read_file():
+    d1 = datetime.now()
+    read = r.Reader(x+y)
+    list_sequences, head_sequences, keys_seq = read.run()
+    pdt = datetime.now()
+    d2 = datetime.now()
+    # print('Duración: ', d2-d1)
+    df = pd.json_normalize({
+        "Nombre_archivo: ": y,
+        "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
+        "Num Aprox de bp: ": os.path.getsize(x+y),
+        'Algoritmo': 'Procesamiento de archivo (PA)',
+        "Lista_sequencia_longitud: ": len(list_sequences),
+        "Lista_encabezados: ": len(head_sequences),
+        "Lista_keys: ": len(keys_seq),
+        'Inicio: ': "{}".format(d1),
+        'Fin: ': "{}".format(d2),
+        'Duracion: ': str(d2-d1)})
+
+    df = pd.json_normalize()
+    df.to_csv(z+"log_pruebas.csv",
+              mode='a', header=False)
+    
+    
+def find_n_patterns_bims():
+    '''Funcion para probar bims con diferentes archivos'''
+    d1 = datetime.now()
+    read = r.Reader(x+y)
+    list_sequences, head_sequences, keys_seq = read.run()
+    pdt = datetime.now()
+    
+    pf = BI_n_sequences_copy.basado_indices_sequencial(db_sequence=list_sequences, min_sup=2, keys_seqs=keys_seq ,inputType='archivo', inputName=y)
+    pf.set_initDateTime(pdt)
+    pf.set_pos(pf.find_pos())
+    pf.run()
+    pf.set_finDateTime(datetime.now())
+    
+    try:
+        with open(z+y.replace('.fasta','')+'-BIMS-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+            json.dump(pf.get_patrones(), file_object_json, sort_keys=True, indent=4)
+            
+    except FileError as e:                
+        print('Hubo un error en la escritura del archivo \n'+str(e))
+
+    else:
+        print("Success!, file created")
+        
+    d2 = datetime.now()
+    # print('Duración: ', d2-d1)
+    df = pd.json_normalize({
+        "Nombre_archivo: ": y,
+        "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
+        "Num Aprox de bp: ": os.path.getsize(x+y),
+        'Algoritmo': '(PA)+BIMS',
+        "Lista_sequencia_longitud: ": len(list_sequences),
+        "Lista_encabezados: ": len(head_sequences),
+        "Lista_keys: ": len(keys_seq),
+        'Inicio: ': '{}'.format(d1),
+        'Fin: ': '{}'.format(d2),
+        'Duracion: ': d2-d1})
+
+    df.to_csv(z+"log_pruebas.csv",
+            mode='a', header=False)
+
+def bims_stand_alone():
+    # sequence = ['ACGTGTAAAACTCTTNNNNNNNNNNNNNNNGTT',
+    #             'CNNNNNNNNNNNNNNNNTAAGTCCGTAGCCGACT',]
+    sequence = ['ACGTGTAAAACTCTTGTT',
+                'CTAAGTCCGTAGCCGACT',]
+    min_sup = 2
+
+    bi = BI_n_sequences_copy.basado_indices_sequencial(
+        db_sequence=sequence, min_sup=min_sup, debug=True)
+    bi.set_pos(bi.find_pos())
+    bi.run()
+    # # print("\n")
+    # # print(bi.get_keys_seqs())
+    # print("\n")
+    # print(bi.get_patrones())
+    # print("\n")
+    print(bi.info_patrones())
+    
+
+if __name__ == '__main__':
+    find_n_patterns_bims()
+
+
+
+
+# x = "Plataforma_motifs\\sequencias_prueba\\sequences_flu.fasta"
+# d1 = datetime.now()
+# read = r.Reader(x)
+# list_sequences, head_sequences, keys_seq = read.run()
+# d2 = datetime.now()
+# print('Duración: ',d2-d1)
+
+# datos_pruebas = {
+#     "Nombre_archivo: ": x,
+#     "Peso_archivo (MB): ": (os.path.getsize(x)/1000000),
+#     "Num Aprox de bp: ": os.path.getsize(x),
+#     'Algoritmo': 'Procesamiento de archivo (PA)',
+#     "Lista_sequencia_longitud: ": len(list_sequences),
+#     "Lista_encabezados: ": len(head_sequences),
+#     "Lista_keys: ": len(keys_seq),
+#     'Inicio: ': d1,
+#     'Fin: ': d2,
+#     'Duracion: ': d2-d1
+# }
+
+# df = pd.json_normalize(datos_pruebas)
+# df.to_csv("C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\log_pruebas.csv", mode='a', header=False)
+
+# sequence = []
+# min_sup = 3
+# b = BI_n_sequences_copy.basado_indices_sequencial(db_sequence=sequence, min_sup=3, debug=True, csv=True)
+# b.run()
+# # json_result = json.loads(json.dumps(b.info_patrones()))
+# # df = pd.json_normalize(json_result)
+# # df.to_csv("busqueda_errores.csv")
+# # print("".join("{}\t".format(b.info_patrones())))
+
+# try:
+#     with open(''+(".json"), 'x') as file_object_json:
+#         json.dump(b.info_patrones(), file_object_json,
+#                   sort_keys=True, indent=4)
+# except IOError as e:                
+#     print(f'Hubo un error en la escritura del archivo \n'+str(e))
+
 
 
 
@@ -79,7 +209,7 @@ print("".join("{}\t".format(b.info_patrones())))
 
 
 
-# patrones = {}
+# patrones = {}  
 # gsp = gsp.GSP(sequence, min_sup, inputType="prueba",
 #               initDateTime=datetime.now())
 # gsp.run()

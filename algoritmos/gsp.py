@@ -1,5 +1,8 @@
 import collections
 from collections import defaultdict
+from datetime import datetime
+from .clsGntCode import clsGeneticCode as gc
+traductor = gc('')
 
 class GSP(object):
 
@@ -92,13 +95,13 @@ class GSP(object):
     def get_inputName(self):
         return self.inputName
     
-    def set_initDateTime(self, initDateTime=0):
+    def set_initDateTime(self, initDateTime=datetime.now()):
         self.initDateTime = initDateTime
    
     def get_initDateTime(self):
         return self.initDateTime
     
-    def set_finDateTime(self, finDateTime=0):
+    def set_finDateTime(self, finDateTime=datetime.now()):
         self.finDateTime = finDateTime
    
     def get_finDateTime(self):
@@ -206,6 +209,14 @@ class GSP(object):
         if self.get_debug == True:
             print(frecuent_list)
 
+    def traductorCodon(self, codon):
+        global traductor
+        if len(codon) > 2:
+            traductor.setCodon(codon)
+            return traductor.getCodonCoded()
+        else:
+            return ''
+    
     def info_candidates(self):
         key_seq = lambda x: self.keys_seqs[x] if len(self.keys_seqs) else x
         return {"Configuracion": {
@@ -225,6 +236,7 @@ class GSP(object):
                            "Patron": key,
                            "Longitud": len(key),
                            "Ocurrencias": len(values),
+                           "Traduccion_aminoacido": self.traductorCodon(key),
                            "Posiciones": [{
                                           "sequencia": key_seq(seq), 
                                           "posicion": p+1} 

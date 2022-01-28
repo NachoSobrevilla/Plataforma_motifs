@@ -21,7 +21,7 @@
         var inputFile = document.getElementById("inputFile");
         if (inputFile != null) {
             inputFile.addEventListener("change", function () {
-                var file = this.files[0]; //toma el archivo contienido 
+                var file = this.files[0]; //toma el archivo contenido 
                 var reader = new FileReader(); //crea un lector de archivos
                 reader.onload = function (progressEvent) {
                     // Entire file
@@ -31,10 +31,16 @@
                     var lines = this.result.split('\n'); //separa el archivo por lineas
 
                     document.getElementById("previsualSequenceAnalisisFile").value = ''; //limpia el campo de texto
+                    console.log('cargando datos de archivo');
                     for (var line = 0; line < lines.length; line++) { //recorre las lineas
                         document.getElementById("previsualSequenceAnalisisFile").value += lines[line] + "\n"; //agrega las lineas al campo de texto
-                        if (lines[line].search('>') != -1) { //si la linea contiene una secuencia de fasta
-                            textseqs += 1; //cuenta las keys de la secuencia
+                        // if (lines[line].search('>') != -1) { //si la linea contiene una secuencia de fasta
+                        //     textseqs += 1; //cuenta las keys de la secuencia
+                        // }
+                        if(lines[line][0] == '>'){
+                            textseqs += 1;
+                        }else{
+                            continue;
                         }
 
                     }

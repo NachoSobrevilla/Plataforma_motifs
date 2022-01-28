@@ -39,7 +39,7 @@ class Reader():
 
 
 
-    def matrix_format(self, lines = []):
+    def matrix_format(self, lines):
         r_value = []
         headlines = []
         keys=[]
@@ -70,7 +70,8 @@ class Reader():
         # for file in self.filenames:
         try:
             with open(self.filenames) as file_object:
-                lines = file_object.readlines()
+                # lines = file_object.readlines()
+                list_sequence, headlines, keys_seq = self.matrix_format(file_object)
                 # print(lines)
 
         
@@ -79,11 +80,15 @@ class Reader():
         except FileExistsError as e:
             return (f'Hubo un error en el archivo {self.get_filesnames()}: '+str(e)+'\n'), 'Error dentro del archivo'
         else:
-            list_sequence, headlines, keys_seq = self.matrix_format(lines)
+            
             # for line in file_object:
             #     print(line.rstrip()
             if self.debug == True:
-                print('Sequencias: \n', '\n'.join(str(ls) for ls in list_sequence))
+                # print('Sequencias: \n', '\n'.join(str(ls) for ls in list_sequence))
+                print("nombre: ", file_object.name)
+                print("lista_sequencia_longitud: ", len(list_sequence))
+                print("lista_encabezados: ", len(headlines))
+                print("lista_keys: ", len(keys_seq))
             
             return list_sequence, headlines, keys_seq
 

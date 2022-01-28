@@ -309,9 +309,9 @@ def files_generator(patrones={}, keys_seqs = []):
     except IOError as e:                
         return (f'Hubo un error en la escritura del archivo \n'+str(e))
     except FileNotFoundError as e:
-        return (f'Hubo un error en el archivo: No se encontro o no existe. \n'+str(e)), 'Error: archivo no encontrado' 
+        return (f'Hubo un error en el archivo: No se encontro o no existe. \n'+str(e))
     except FileExistsError as e:
-        return (f'Hubo un error en el archivo: '+str(e)+'\n'), 'Error dentro del archivo'
+        return (f'Hubo un error en el archivo: '+str(e)+'\n')
     else:
         print("Success!, file created")
 
