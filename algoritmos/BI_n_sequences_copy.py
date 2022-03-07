@@ -2,10 +2,6 @@ from datetime import datetime
 import sys
 import os
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-print(SCRIPT_DIR)
-sys.path.append(os.path.dirname(SCRIPT_DIR))
-
 from .clsGntCode import clsGeneticCode as gc
 from collections import defaultdict
 traductor = gc('')
@@ -25,6 +21,20 @@ class basado_indices_sequencial(object):
       self.inputName = inputName
       self.initDateTime = initDateTime
       self.finDateTime = finDateTime
+   
+   def clear(self):
+      self.db_sequence.clear()
+      self.min_sup = 0
+      self.pos.clear()
+      self.patrones.clear()
+      self.keys_seqs.clear()
+      self.debug = False
+      self.debugTime = False
+      self.csv = False
+      self.inputType = ""
+      self.inputName = ""
+      self.initDateTime = 0
+      self.finDateTime = 0
       
    def set_dbsequence(self, db_sequence=[]):
       self.db_sequence = db_sequence
@@ -135,7 +145,7 @@ class basado_indices_sequencial(object):
       
 
       while self.get_lenpos() != 0:
-         print('entra iteracion '+i)
+         # print('entra iteracion '+str(i))
          
             
          # for key, values in self.pos.items():  # Para cada candidato y sus posiciones
@@ -187,12 +197,13 @@ class basado_indices_sequencial(object):
          # print(candidates)
          # if i == 2:
          #    break
+         # print("#patron_hallados: "+str(len(self.patrones.keys())))
+         i+=1
 
-      if self.get_debug() == True:
-         print('\n', 'Patrones Hallados: ', ', '.join(str(c) for c in self.get_only_patrones()))
+         if self.get_debug() == True:
+            print('\n', 'Patrones Hallados: ', ', '.join(str(c) for c in self.get_only_patrones()))
       
-      print("#patron_hallados: "+len(self.patrones.keys()))
-      i+=1
+     
       # return candidates
       
       
@@ -391,6 +402,7 @@ class basado_indices_sequencial(object):
                                  "Entrada": self.get_inputName(),
                                  "Sequencias_ananlizadas": "-".join(self.get_keys_seqs()),
                                  "Num_Sequencias_ananlizadas": len(self.get_dbsequence()),
+                                 "Lon_Sequencias_ananlizadas": "-".join(str(len(i)) for i in self.db_sequence),
                                  "Num_Patrones_hallados": len(self.get_patrones()),
                                  "Fecha_Hora_Inicio": "{}".format(self.get_initDateTime()),
                                  "Fecha_Hora_Fin": "{}".format(self.get_finDateTime()),
@@ -399,7 +411,7 @@ class basado_indices_sequencial(object):
                   "Patrones": [{
                               "Patron": key,
                               "Longitud": len(key),
-                              "Ocurrencias": len(values),
+                              "Ocurrencias": len(values.items()),
                               "Traduccion_aminoacido": self.traductorCodon(key),   #.getCodonCoded(),
                               "Posiciones": [{
                                              "sequencia": key_seq(seq),

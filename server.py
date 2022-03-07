@@ -198,7 +198,7 @@ def find_motifs(list_sequences= [], min_sup = 0, input_type='', input_name = '',
         gsp.run()
         gsp.set_finDateTime(datetime.datetime.now())
         gsp.set_keys_seqs(keys_seq)
-        patrones = gsp.info_candidates()
+        patrones = gsp.info_patrones()
     
     else:
         print('Error, sin algoritmo selecioando')

@@ -20,6 +20,20 @@ class GSP(object):
         self.initDateTime = initDateTime
         self.finDateTime = finDateTime
     
+    def clear(self):
+        self.ds.clear()
+        self.min_sup = 0
+        self.pos.clear()
+        self.patrones.clear()
+        self.keys_seqs.clear()
+        self.debug = False
+        self.debugTime = False
+        self.csv = False
+        self.inputType = ""
+        self.inputName = ""
+        self.initDateTime = 0
+        self.finDateTime = 0
+    
     def set_ds(self, ds=[]):
       self.ds = ds
 
@@ -217,7 +231,7 @@ class GSP(object):
         else:
             return ''
     
-    def info_candidates(self):
+    def info_patrones(self):
         key_seq = lambda x: self.keys_seqs[x] if len(self.keys_seqs) else x
         return {"Configuracion": {
                                     "Algoritmo": "GSP",
@@ -227,6 +241,7 @@ class GSP(object):
                                     "Entrada": self.get_inputName(),
                                     "Sequencias_ananlizadas": '-'.join(self.get_keys_seqs()),
                                     "Num_Sequencias_ananlizadas": len(self.get_ds()),
+                                    "Lon_Sequencias_ananlizadas": "-".join(str(len(i)) for i in self.ds),
                                     "Num_Patrones_hallados": len(self.get_patrones()),
                                     "Fecha_Hora_Inicio": '{}'.format(self.get_initDateTime()),
                                     "Fecha_Hora_Fin": '{}'.format(self.get_finDateTime()),

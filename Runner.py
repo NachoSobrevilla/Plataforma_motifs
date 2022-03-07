@@ -1,10 +1,12 @@
 
 # from os import truncate
+import glob
 import sys
 import os
 
-from click import FileError, exceptions
 
+from click import FileError, exceptions
+from tqdm import tqdm
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 import time
@@ -17,9 +19,14 @@ import re
 import pandas as pd
 import json
 
-x = "Plataforma_motifs\\sequencias_prueba\\"
-y = "sequence_orange_Citrus sinensis_3_100M.fasta"
+x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\Secuencias ADN\\"
+y = "sequence_citrus_8_150M.fasta"#"test_sequence.fasta"   
 z = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\"
+# x1 = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud similar\\"
+x1 = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud diferente\\"
+y1 = "sequence_XM_011544263.fasta"
+
+
 
 def read_file():
     d1 = datetime.now()
@@ -47,43 +54,204 @@ def read_file():
     
 def find_n_patterns_bims():
     '''Funcion para probar bims con diferentes archivos'''
-    d1 = datetime.now()
-    read = r.Reader(x+y)
-    list_sequences, head_sequences, keys_seq = read.run()
-    pdt = datetime.now()
-    
-    pf = BI_n_sequences_copy.basado_indices_sequencial(db_sequence=list_sequences, min_sup=2, keys_seqs=keys_seq ,inputType='archivo', inputName=y)
-    pf.set_initDateTime(pdt)
-    pf.set_pos(pf.find_pos())
-    pf.run()
-    pf.set_finDateTime(datetime.now())
-    
-    try:
-        with open(z+y.replace('.fasta','')+'-BIMS-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
-            json.dump(pf.get_patrones(), file_object_json, sort_keys=True, indent=4)
-            
-    except FileError as e:                
-        print('Hubo un error en la escritura del archivo \n'+str(e))
-
-    else:
-        print("Success!, file created")
+    archivos = glob.glob(os.path.join(
+        z, "adicional multi"+os.path.sep)+'*.fasta')
+    i = 0
+    for archivo in tqdm(archivos):
+        d1 = datetime.now()
+        print("leyendo archivos")      
+        read = r.Reader(archivo)
+        list_sequences, head_sequences, keys_seq = read.run()
+        print("lectura terminada")
+        pdt = datetime.now()
+        print("iniciando analisis")
         
-    d2 = datetime.now()
-    # print('Duración: ', d2-d1)
-    df = pd.json_normalize({
-        "Nombre_archivo: ": y,
-        "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
-        "Num Aprox de bp: ": os.path.getsize(x+y),
-        'Algoritmo': '(PA)+BIMS',
-        "Lista_sequencia_longitud: ": len(list_sequences),
-        "Lista_encabezados: ": len(head_sequences),
-        "Lista_keys: ": len(keys_seq),
-        'Inicio: ': '{}'.format(d1),
-        'Fin: ': '{}'.format(d2),
-        'Duracion: ': d2-d1})
+        pf = BI_n_sequences_copy.basado_indices_sequencial(db_sequence=list_sequences, min_sup=5, keys_seqs=keys_seq ,inputType='archivo', inputName=y)
+        pf.set_initDateTime(pdt)
+        tqdm(pf.set_pos(pf.find_pos()))
+        tqdm(pf.run())
+        pf.set_finDateTime(datetime.now())
+        
+        dtBI = {
+            "Sequencias": "-".join(keys_seq),
+            "longitud": "-".join(str(len(i)) for i in list_sequences),
+            "patrones_obtenidos": len(pf.get_only_patrones()),
+            "duracion": '{}'.format(pf.get_finDateTime() - pf.get_initDateTime()),
+            "duracion_seg": str(pf.get_finDateTime() - pf.get_initDateTime())
+        }
+        
+        print("analisis finalizado")
+        try:
+            with open("secuencie"+str(len(keys_seq))+str(i)+'-BIMS-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+                json.dump(pf.info_patrones(), file_object_json, sort_keys=True, indent=4)
+                
+        except FileError as e:                
+            print('Hubo un error en la escritura del archivo \n'+str(e))
 
-    df.to_csv(z+"log_pruebas.csv",
-            mode='a', header=False)
+        else:
+            print("Success!, file created")
+            # del(pf)
+        
+        d2 = datetime.now()
+            
+        # print('Duración: ', d2-d1)
+        df = pd.json_normalize({
+            "Nombre_archivo: ": y,
+            "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
+            "Num Aprox de bp: ": os.path.getsize(x+y),
+            'Algoritmo': '(PA)+BIMS',
+            "Lista_sequencia_longitud: ": len(list_sequences),
+            "Lista_encabezados: ": len(head_sequences),
+            "Lista_keys: ": len(keys_seq),
+            'Inicio: ': '{}'.format(d1),
+            'Fin: ': '{}'.format(d2),
+            'Duracion: ': d2-d1})
+
+        df.to_csv(z+"log_pruebas.csv",
+                mode='a', header=False)
+        
+        pf.clear()
+        del(pf)
+        dfbi = pd.json_normalize(dtBI)
+        dfbi.to_csv(z+"log_cap_bims.csv", mode='a', header=False)
+        
+        
+        i += 1
+        
+
+def find_n_patterns_gsp():
+    '''Funcion para probar bims con diferentes archivos'''
+    archivos = glob.glob(os.path.join(
+        z, "adicional multi"+os.path.sep)+'*.fasta')
+    i = 0
+    for archivo in tqdm(archivos):
+        d1 = datetime.now()
+        print("leyendo archivos")
+        read = r.Reader(archivo)
+        list_sequences, head_sequences, keys_seq = read.run()
+        print("lectura terminada")
+        pdt = datetime.now()
+        print("iniciando analisis")
+
+        pf = gsp.GSP(
+             ds=list_sequences, min_sup=5, keys_seqs=keys_seq, inputType='archivo', inputName=y)
+        pf.set_initDateTime(pdt)
+        # tqdm(pf.set_pos(pf.find_pos()))
+        tqdm(pf.run())
+        pf.set_finDateTime(datetime.now())
+
+        dtBI = {
+            "Sequencias": "-".join(keys_seq),
+            "longitud": "-".join(str(len(i)) for i in list_sequences),
+            "patrones_obtenidos": len(pf.get_only_patrones()),
+            "duracion": '{}'.format(pf.get_finDateTime() - pf.get_initDateTime()),
+            "duracion_seg": str(pf.get_finDateTime() - pf.get_initDateTime())
+        }
+
+        print("analisis finalizado")
+        try:
+            with open("secuencie"+str(len(keys_seq))+str(i)+'-GSP-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+                json.dump(pf.info_patrones(), file_object_json,
+                          sort_keys=True, indent=4)
+
+        except FileError as e:
+            print('Hubo un error en la escritura del archivo \n'+str(e))
+
+        else:
+            print("Success!, file created")
+            # del(pf)
+
+        d2 = datetime.now()
+
+        # print('Duración: ', d2-d1)
+        df = pd.json_normalize({
+            "Nombre_archivo: ": y,
+            "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
+            "Num Aprox de bp: ": os.path.getsize(x+y),
+            'Algoritmo': '(PA)+GSP',
+            "Lista_sequencia_longitud: ": len(list_sequences),
+            "Lista_encabezados: ": len(head_sequences),
+            "Lista_keys: ": len(keys_seq),
+            'Inicio: ': '{}'.format(d1),
+            'Fin: ': '{}'.format(d2),
+            'Duracion: ': d2-d1})
+
+        df.to_csv(z+"log_pruebas.csv",
+                  mode='a', header=False)
+
+        pf.clear()
+        del(pf)
+        dfbi = pd.json_normalize(dtBI)
+        dfbi.to_csv(z+"log_cap_gsp.csv", mode='a', header=False)
+
+        i += 1
+
+
+def find_patterns_bi():
+    '''Funcion para probar bims con diferentes archivos'''
+    archivos = glob.glob(os.path.join(z, "adicional"+os.path.sep)+'*.fasta')
+    i = 0
+    print(archivos)
+    for archivo in tqdm(archivos):
+        d1 = datetime.now()
+        print("leyendo archivos")      
+        read = r.Reader(archivo)
+        list_sequences, head_sequences, keys_seq = read.run()
+        print("lectura terminada")
+        pdt = datetime.now()
+        print("iniciando analisis")
+        pf = BI_copy.basado_indices(
+            s=list_sequences[0], min_sup=2, keys_seqs=keys_seq, inputType='archivo', inputName=""+str(i))
+        # pf = BI_n_sequences_copy.basado_indices_sequencial(db_sequence=list_sequences, min_sup=5, keys_seqs=keys_seq ,inputType='archivo', inputName=y)
+        pf.set_initDateTime(pdt)
+        tqdm(pf.set_pos(pf.find_pos()))
+        tqdm(pf.run())
+        pf.set_finDateTime(datetime.now())
+        dataBi = pf.info_patrones()
+        dtBI = {
+            "Sequencia":dataBi["Configuracion"]["Sequencias_ananlizadas"],
+            "longitud": dataBi["Configuracion"]["Longitud_Secuencias"],
+            "patrones_obtenidos": dataBi["Configuracion"]["Num_Patrones_hallados"],
+            "duracion": '{}'.format(dataBi["Configuracion"]["Duracion"]),
+            "duracion_seg": str(self.get_finDateTime() - self.get_initDateTime())
+        }
+        print("analisis finalizado")
+        try:
+            with open(z+"sequences_"+str(keys_seq)+str(i)+'-BI-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+                json.dump(dataBi, file_object_json, sort_keys=True, indent=4)
+                
+        except FileError as e:                
+            print('Hubo un error en la escritura del archivo \n'+str(e))
+
+        else:
+            print("Success!, file created")
+            
+        d2 = datetime.now()
+        # print('Duración: ', d2-d1)
+        df = pd.json_normalize({
+            "Nombre_archivo: ": "sequence_experimental_1_1000_"+str(i),
+            "Peso_archivo (MB): ": (os.path.getsize(x1+y1)/1000000),
+            "Num Aprox de bp: ": os.path.getsize(x1+y1),
+            'Algoritmo': '(PA)+BI',
+            "Lista_sequencia_longitud: ": len(list_sequences),
+            "Lista_encabezados: ": len(head_sequences),
+            "Lista_keys: ": len(keys_seq),
+            'Inicio: ': '{}'.format(d1),
+            'Fin: ': '{}'.format(d2),
+            'Duracion: ': d2-d1})
+        
+        
+
+        df.to_csv(z+"log_pruebas.csv",
+                mode='a', header=False)
+        
+        dfbi = pd.json_normalize(dtBI)
+        dfbi.to_csv(z+"log_cap_bi.csv", mode ='a', header=False)
+        
+        pf.clear()
+        
+        i+=1
+
 
 def bims_stand_alone():
     # sequence = ['ACGTGTAAAACTCTTNNNNNNNNNNNNNNNGTT',
@@ -105,7 +273,9 @@ def bims_stand_alone():
     
 
 if __name__ == '__main__':
-    find_n_patterns_bims()
+    # find_patterns_bi()
+    #find_n_patterns_bims()
+    find_n_patterns_gsp()
 
 
 
