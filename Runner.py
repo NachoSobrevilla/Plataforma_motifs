@@ -3,8 +3,6 @@
 import glob
 import sys
 import os
-
-
 from click import FileError, exceptions
 from tqdm import tqdm
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -18,6 +16,7 @@ import server as s
 import re
 import pandas as pd
 import json
+import Alineador_Patornes, Alineador_Patornes_multi
 
 x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\Secuencias ADN\\"
 y = "sequence_citrus_8_150M.fasta"#"test_sequence.fasta"   
@@ -80,6 +79,10 @@ def find_n_patterns_bims():
             "duracion_seg": str(pf.get_finDateTime() - pf.get_initDateTime())
         }
         
+        align = Alineador_Patornes_multi.Alineador_multi(
+            secuencias=dict(zip(keys_seq, list_sequences)), tolerancia_atras=2, tolerancia_delante=2, json_patrones=pf.info_patrones())
+        align.alineador_multi()
+        
         print("analisis finalizado")
         try:
             with open("secuencie"+str(len(keys_seq))+str(i)+'-BIMS-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
@@ -99,7 +102,7 @@ def find_n_patterns_bims():
             "Nombre_archivo: ": y,
             "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
             "Num Aprox de bp: ": os.path.getsize(x+y),
-            'Algoritmo': '(PA)+BIMS',
+            'Algoritmo': '(PA)+BIMS+Alineador',
             "Lista_sequencia_longitud: ": len(list_sequences),
             "Lista_encabezados: ": len(head_sequences),
             "Lista_keys: ": len(keys_seq),
@@ -149,6 +152,11 @@ def find_n_patterns_gsp():
         }
 
         print("analisis finalizado")
+        
+        align = Alineador_Patornes_multi.Alineador_multi(
+            secuencias=dict(zip(keys_seq, list_sequences)), tolerancia_atras=2, tolerancia_delante=2, json_patrones=pf.info_patrones())
+        align.alineador_multi()
+        
         try:
             with open("secuencie"+str(len(keys_seq))+str(i)+'-GSP-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
                 json.dump(pf.info_patrones(), file_object_json,
@@ -168,7 +176,7 @@ def find_n_patterns_gsp():
             "Nombre_archivo: ": y,
             "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
             "Num Aprox de bp: ": os.path.getsize(x+y),
-            'Algoritmo': '(PA)+GSP',
+            'Algoritmo': '(PA)+GSP+alineador',
             "Lista_sequencia_longitud: ": len(list_sequences),
             "Lista_encabezados: ": len(head_sequences),
             "Lista_keys: ": len(keys_seq),
@@ -213,8 +221,13 @@ def find_patterns_bi():
             "longitud": dataBi["Configuracion"]["Longitud_Secuencias"],
             "patrones_obtenidos": dataBi["Configuracion"]["Num_Patrones_hallados"],
             "duracion": '{}'.format(dataBi["Configuracion"]["Duracion"]),
-            "duracion_seg": str(self.get_finDateTime() - self.get_initDateTime())
+            "duracion_seg": str(pf.get_finDateTime() - pf.get_initDateTime())
         }
+        
+        align = Alineador_Patornes.Alineador(
+            secuencia=list_sequences[0], tolerancia_atras=2, tolerancia_delante=2, json_patrones=dataBi)
+        align.alineador()
+
         print("analisis finalizado")
         try:
             with open(z+"sequences_"+str(keys_seq)+str(i)+'-BI-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
@@ -232,7 +245,7 @@ def find_patterns_bi():
             "Nombre_archivo: ": "sequence_experimental_1_1000_"+str(i),
             "Peso_archivo (MB): ": (os.path.getsize(x1+y1)/1000000),
             "Num Aprox de bp: ": os.path.getsize(x1+y1),
-            'Algoritmo': '(PA)+BI',
+            'Algoritmo': '(PA)+BI+alineador',
             "Lista_sequencia_longitud: ": len(list_sequences),
             "Lista_encabezados: ": len(head_sequences),
             "Lista_keys: ": len(keys_seq),
@@ -269,13 +282,13 @@ def bims_stand_alone():
     # print("\n")
     # print(bi.get_patrones())
     # print("\n")
-    print(bi.info_patrones())
+    # print(bi.info_patrones())
     
 
 if __name__ == '__main__':
-    # find_patterns_bi()
+    find_patterns_bi()
     #find_n_patterns_bims()
-    find_n_patterns_gsp()
+    # find_n_patterns_gsp()
 
 
 

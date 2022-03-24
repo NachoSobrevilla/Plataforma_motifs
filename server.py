@@ -294,7 +294,7 @@ def files_generator(patrones={}, keys_seqs = []):
                     for k,v in vp.items():
                         writer.writerow(['',k, v])
                     writer.writerow(['\n'])
-                    
+        
                 elif kp == "Patrones":
                     writer.writerow([kp])
                     writer.writerow([list(vp[0].keys())])
