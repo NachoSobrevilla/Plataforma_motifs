@@ -1,15 +1,16 @@
 #Py Servidor Flask
 #Importaciones
-from types import MethodType
 from flask import Flask, render_template, request, jsonify, send_file, url_for
 from os.path import join, dirname, realpath
-from werkzeug.utils import secure_filename, send_from_directory
-from werkzeug.wrappers import response
+from werkzeug.utils import secure_filename
 from Reader import Reader
-from algoritmos.BI_n_sequences_copy import basado_indices_sequencial
+from algoritmos.BI_n_sequences_copy import basado_indices_secuencial
 from algoritmos.BI_copy import basado_indices
 from algoritmos.gsp import GSP
-import json, os, datetime, csv, re, pandas as pd, glob
+import json, os, datetime, csv, re, glob
+import Alineador_Patornes
+import Alineador_Patornes_multi
+
 #Variables
 
 app = Flask(__name__)
@@ -40,6 +41,9 @@ def analisisTxt():
     keys_seqs = request_json[0]['keys_sequences']
     sequences = request_json[0]['sequence']
     input_type = request_json[0]['input']
+    longitud_minima = int(request_json[0]['longtud_minina'])
+    tolerancia_delante = int(request_json[0]['tolerancia_delante'])
+    tolerancia_atras = int(request_json[0]['tolerancia_atras'])
 
     # input_type =  input_type + str(datetime.datetime.now())
     
@@ -54,7 +58,7 @@ def analisisTxt():
     #     patrones.update(bi.info_patrones())
 
     # elif algorithm == 'bi+':
-    #     bis = basado_indices_sequencial(sequences, min_sup)
+    #     bis = basado_indices_secuencial(sequences, min_sup)
     #     bis.set_pos(bis.find_pos())
     #     bis.run()
     #     bis.set_keys_seqs()
@@ -67,12 +71,15 @@ def analisisTxt():
     #     patrones = gsp.info_candidates()
         
     # else:
-    #     pass
+    #     passsequences
     
+    patrones, patrones_motif = find_motifs(sequences, min_sup, input_type, 'texto-plano', algorithm, keys_seq=keys_seqs,
+                                           tolerancia_atras=tolerancia_atras, tolerancia_frente=tolerancia_delante, longitud_minina_cre=longitud_minima)
 
-    patrones  =  find_motifs(sequences, min_sup, input_type, 'texto-plano', algorithm, keys_seq= keys_seqs)
     files_generator(patrones)
-    return jsonify(patrones)
+    # return jsonify(patrones)
+    return jsonify(patrones_motif)
+
     # return json.dumps({'Candidatos':candidates})
 
     # sequence = request.get_data()
@@ -93,6 +100,9 @@ def analisisFile():
     min_sup = int(request.form["min_sup"])
     file = request.files['file']
     input_type = request.form['input']
+    longitud_minima = int(request.form['longtud_minina'])
+    tolerancia_delante = int(request.form['tolerancia_delante'])
+    tolerancia_atras = int(request.form['tolerancia_atras'])
     patrones = {}
     # 
     # print()
@@ -121,7 +131,7 @@ def analisisFile():
     #         # candidates = bi.run()
 
     # elif algorithm == 'bi+':
-    #     bis = basado_indices_sequencial(list_sequences, min_sup, inputType=input_type)
+    #     bis = basado_indices_secuencial(list_sequences, min_sup, inputType=input_type)
     #     bis.set_pos(bis.find_pos())
     #     bis.run()
     #     print(bis.get_patrones())
@@ -151,17 +161,19 @@ def analisisFile():
     # print(type(r_value))
     # print(r_value)
     # return r_value, 200, {"Content-Type": "application/json"}
-    patrones = find_motifs(list_sequences, min_sup, input_type, input_name, algorithm, keys_seq)
+    patrones, patrones_motif = find_motifs(list_sequences, min_sup, input_type, input_name, algorithm, keys_seq, tolerancia_atras, tolerancia_delante, longitud_minima)
     if len(patrones['Patrones']) > 0:
         files_generator(patrones, keys_seq)
-        return jsonify(patrones)
+        # return jsonify(patrones)
+        return jsonify(patrones_motif)
     else:
         return jsonify({'Message_error':'Ejecución sin resultados'})
     # return jsonify([{"Encabezados": head_sequences, "Candidatos": candidates}])
 
-def find_motifs(list_sequences= [], min_sup = 0, input_type='', input_name = '', algorithm = '', keys_seq=[]): 
+def find_motifs(list_sequences= [], min_sup = 0, input_type='', input_name = '', algorithm = '', keys_seq=[], tolerancia_atras = 2, tolerancia_frente = 2, longitud_minina=6): 
     '''Funcion que contiene los algoritmos para hallar motifs'''
     patrones = {}
+    patrones_motif = {}
     if algorithm == 'bi':
         bi = basado_indices(inputType = input_type, inputName = input_name)
         bi.set_initDateTime(datetime.datetime.now())
@@ -179,17 +191,26 @@ def find_motifs(list_sequences= [], min_sup = 0, input_type='', input_name = '',
         # bi.set_pos(bi.find_pos())
         # bi.run()
         patrones.update(bi.info_patrones())
+        
+        ap = Alineador_Patornes.Alineador(
+            secuencia=list_sequences[0], tolerancia_delante= tolerancia_frente, tolerancia_atras= tolerancia_atras, longitud_minina_cre= longitud_minina, json_patrones=patrones)
+        patrones_motif.update(ap.alineador())
         # candidates = bi.run()
 
     elif algorithm == 'bi+':
-        bis = basado_indices_sequencial(
+        bis = basado_indices_secuencial(
             list_sequences, min_sup, inputType=input_type, inputName=input_name)
         bis.set_initDateTime(datetime.datetime.now())
         bis.set_pos(bis.find_pos())
         bis.run()
         bis.set_finDateTime(datetime.datetime.now())
         bis.set_keys_seqs(keys_seq) #aunque sea mandar un listado de numeros cuando sean manual
+        
         patrones = bis.info_patrones()
+        
+        apm = Alineador_Patornes_multi.Alineador_multi(
+            secuencias=dict(zip(keys_seq, list_sequences)), tolerancia_delante=tolerancia_frente, tolerancia_atras=tolerancia_atras, longitud_minima_cre=longitud_minina, json_patrones=patrones)
+        patrones_motif.update(apm.alineador())
 
     elif algorithm == 'gsp':
         gsp = GSP(list_sequences, min_sup,
@@ -199,11 +220,16 @@ def find_motifs(list_sequences= [], min_sup = 0, input_type='', input_name = '',
         gsp.set_finDateTime(datetime.datetime.now())
         gsp.set_keys_seqs(keys_seq)
         patrones = gsp.info_patrones()
+        apm = Alineador_Patornes_multi.Alineador_multi(
+            secuencias=dict(zip(keys_seq, list_sequences)),
+            tolerancia_delante= tolerancia_frente, 
+            tolerancia_atras= tolerancia_atras, longitud_minina_cre= longitud_minina, json_patrones=patrones)
+        patrones_motif.update(apm.alineador())
     
     else:
         print('Error, sin algoritmo selecioando')
         
-    return patrones
+    return patrones, patrones_motif
 
 # def json_generator(algoritmo, min_sup, inputType, nomArch, keySeq, sequences):
 #     def key_seq(x): return keySeq[x] if len(keySeq) else x

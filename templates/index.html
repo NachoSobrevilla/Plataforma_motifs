@@ -68,7 +68,7 @@
 
     <!--Funciones JS propias-->
     <!-- <script type='text/javascript' src="{{url_for('static', filename = 'js/functions.js')}}"></script> -->
-    <script type='text/javascript' src="../static/js/functions.js"></script>
+    <!-- <script type='text/javascript' src="../static/js/functions.js"></script> -->
 
 
 
@@ -146,7 +146,7 @@
                                     <label class="text-xl-left  mx-2" for="formControlInputSelect">Opciones de
                                         entrada</label>
                                     <select class="form-control-sm  mx-2" id="formControlInputSelect"
-                                        onchange="selectProccess()">
+                                        onchange="selectProcess()">
                                         <option value="inputManual">Ingresar Manualmente</option>
                                         <option value="inputFile">Subir archivo de tipo FASTA</option>
                                         <!-- <option value="inputDB">Desde una base de datos biologica (Genbank)</option> -->
@@ -195,11 +195,11 @@
                                     <input type="file" class="form-control-file" id="inputFile" name='inputFile' accept=".fasta" draggable="true">
                                     <!--multiple-->
                                 </div>
-                                <div class="form-group row m-2" id='inputFileRow2'>
+                                <!-- <div class="form-group row m-2" id='inputFileRow2'>
                                     <textarea class="form-control my-2" id="previsualSequenceAnalisisFile" rows="10"
-                                        placeholder="Previsualización" readonly></textarea>
-                                     <button type="button" class="btn btn-info form-control btn-lg my-2" id="sendSequenceFile">Iniciar Análisis</button> 
-                                 </div> 
+                                        placeholder="Previsualización" readonly></textarea> 
+                                      <button type="button" class="btn btn-info form-control btn-lg my-2" id="sendSequenceFile">Iniciar Análisis</button> 
+                                  </div>  -->
                             </fieldset>
 
                         </form>
@@ -207,7 +207,7 @@
                         <form class="row container-fluid m-2" id="configAlgorithm">
                             <!--formulario para configurar el algoritmo-->
                             <fieldset>
-                                <div class="form-group form-row m-2 align-middle" id='initOptions'>
+                                <div class="form-group form m-2 align-middle" id='initOptions'>
                                     <label class="text-xl-left " for="selectAlgorithm">Tipo de algoritmo</label>
                                     <select class="form-control-sm  mx-2" id="selectAlgorithm" onchange="infoSelectAlgorithm()"
                                         aria-valuenow="-1">
@@ -219,19 +219,41 @@
                                     <span id="infoAlgoritmo" class="material-icons" title="">info</span>
                                 </div>
 
-                                <div class="form-group form-row m-2 align-middle" id='initOptions'>
+                                <div class="form-group  m-2 align-middle" id='initOptions'>
                                     <label class='' for="minSup">Umbral (minimo soporte)</label>
-                                    <input class='mx-2' type="number" id="minSup" name="minSup" max="" min="2" value="">
+                                    <input class='mx-2' type="number" id="minSup" name="minSup" max="2" min="2" value="">
                                     <span id="infoMinSup" class="material-icons" title="">info</span>
                                 </div>
 
-                                <br>
+                                <div class="form-group  m-2 align-middle" id='contentLMC'>
+                                    <label class='' for="LMC">Longitud minima de crecimiento para el patron</label>
+                                    <input class='mx-2' type="number" id="LMC" name="LMC" max="20" min="1" value="">
+                                    <span id="infoLMC" class="material-icons" title="En el valor minimo que tiene que tener el patron frecuente y las respectivas alineaciones, y si no lo tiene va ha crecer para alcanzar ese valor minimo ">info</span>
+                                </div>
 
-                                <button type="button" class="btn btn-info form-control btn-lg m-2"
-                                    id="sendSequenceFile">Iniciar Análisis</button>
+                                <div class="form-group  m-2 align-middle" id='contentTD'>
+                                    <label class='' for="tolerancia_delante">Toleancia hacia delante</label>
+                                    <input class='mx-2' type="number" id="tolerancia_delante" name="tolerancia_delante" max="5" min="1" value="">
+                                    <span id="infoToleranciaDelante" class="material-icons" title="Es el numero no coincidencias hacia delante de las secuencias que se pueden permitir para encontrar posciones con coincidencias de un nucleotido en especifico">info</span>
+                                </div>
 
-                                <button type="button" class="btn btn-info form-control btn-lg m-2"
-                                    id="sendSequenceTxt">Iniciar Análisis</button>
+                                <div class="form-group  m-2 align-middle" id='contentTDe'>
+                                    <label class='' for="tolerancia_atras">Toleancia hacia detras</label>
+                                    <input class='mx-2' type="number" id="tolerancia_atras" name="" max="5" min="1" value="">
+                                    <span id="infoToleranciaAtras" class="material-icons" title="Es el numero no coincidencias hacia atras de las secuencias que se pueden permitir para encontrar posciones con coincidencias de un nucleotido en especifico">info</span>
+                                </div>
+
+                                <div id ="btnSentSeqFile" class = "form-group form-row mx-2 align-middle"> 
+                                    <button id="sendSequenceFile" type="button" class="btn btn-info form-control btn-lg m-2 ">Iniciar Análisis</button>
+                                </div>
+
+                                
+                                <div id ="btnSentSeqText" class = "form-group form-row mx-2 align-middle" >
+                                    <button id="sendSequenceTxt" type="button" class="btn btn-info form-control btn-lg m-2"
+                                    >Iniciar Análisis</button>
+                                </div>
+                                
+
 
                                 <!-- <div class="form-group row" id='inputPricipalRows'> -->
                                 <!-- <textarea class="form-control my-2" id="previsualSequenceAnalisisFile" rows="5" placeholder="Previsualización" readonly hidden></textarea> -->
@@ -382,6 +404,7 @@
                 versión 0.1 (experimental)
             </p>
         </div>
+        <script type='text/javascript' src="../static/js/functions.js"></script>
     </footer>
 
 

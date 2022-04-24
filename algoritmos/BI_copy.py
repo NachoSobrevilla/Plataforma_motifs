@@ -4,6 +4,8 @@ import pandas as pd
 from collections import defaultdict
 from time import time
 from typing import DefaultDict
+
+from scipy import rand
 from .clsGntCode import clsGeneticCode as gc
 traductor = gc('')
 
@@ -382,11 +384,18 @@ class basado_indices(object):
 
 
       # return self.pos.keys()
+   #traductor de secuencias de ADN a Aminoaciodos
    def traductorCodon(self, codon):
       global traductor
       if len(codon) > 2:
-         traductor.setCodon(codon)
-         return traductor.getCodonCoded()
+         tra = '' #traduccion final
+         recorridos = int(round(len(codon)/3,1))
+         
+         for i in range(recorridos):
+            traductor.setCodon(codon[i*3:(i+1)*3])
+            tra += traductor.getCodonCoded()
+         
+         return tra 
       else:
          return ''
       

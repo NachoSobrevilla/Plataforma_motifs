@@ -5,6 +5,7 @@ import re
 import datetime
 import xlsxwriter
 import json
+from zipfile import ZipFile
 from graficador import Graficador
 from os.path import join, dirname, realpath
 from tqdm import tqdm
@@ -12,10 +13,11 @@ from tqdm import tqdm
 EXP_FOLDER = join(dirname(realpath(__file__)), 'experimentos')
 
 class Alineador_multi(object):
-    def __init__(self, secuencias = {}, tolerancia_delante = 0, tolerancia_atras = 0, json_patrones = ""):
+    def __init__(self, secuencias = {}, tolerancia_delante = 2, tolerancia_atras = 2, longitud_minima_cre = 6, json_patrones = ""):
         self.secuencias = secuencias
         self.tolerancia_delante = tolerancia_delante
         self.tolerancia_atras = tolerancia_atras
+        self.longitud_minina_cre = longitud_minima_cre
         self.json_patrones =  json_patrones
         self.alineamientos = []
         self.motifs = []
@@ -23,6 +25,7 @@ class Alineador_multi(object):
     def clear(self):
         self.secuencias = ''
         self.tolerancia_atras = 0
+        self.longitud_minina_cre = 0
         self.tolerancia_delante = 0
         self.json_patrones = ''
         self.alineamientos = []
@@ -34,7 +37,7 @@ class Alineador_multi(object):
             return self.json_patrones
             
               
-    def muestra_resultados_json(self, alineamientos =[], posiciones_align=[], patrones=[]):
+    def muestra_resultados_json(self, alineamientos =[], posiciones_align=[], patrones=[], aminoacidos = []):
         dict_json ={}
         list_info =[]
         for i in tqdm(range(len(patrones))):
@@ -44,7 +47,7 @@ class Alineador_multi(object):
                 
             # print(x)
             # print(type(alineamientos[i]))
-            pd_conteos, motif = self.obtener_motif( x, patrones[i])
+            df_conteos, df_info ,motif, exp_reg = self.obtener_motif( x, patrones[i])
             
             if motif != "":
                 list_info.append({
@@ -56,8 +59,14 @@ class Alineador_multi(object):
                                     for y,z in zip(alineamientos[i].items(), posiciones_align[i].items()) 
                                     for y1, z1 in zip(y[1],z[1]) if (y[0] == x1 and z[0] == x1)
                                     ],
-                    "matriz_conteo": json.loads(pd_conteos.to_json(orient="index")),
-                    "motif": motif           
+                    "matriz_conteo": json.loads(df_conteos.to_json(orient="index")),
+                    "matriz_info": json.loads(df_info.to_json(orient="index")),
+                    "motif": motif,
+                    "longitud_motif": len(motif),
+                    "expresion_regular": exp_reg,
+                    "ocurrencias_patron": len(alineamientos[i]),
+                    "traduccion_aminoacido": aminoacidos[i]
+                    
                 })
 
 
@@ -70,14 +79,176 @@ class Alineador_multi(object):
        
     def obtener_motif(self, alineamiento=[""], patron=""):
         g = Graficador(alineamiento)
-
-        pd_conteos, motif = g.ploteo_logo_seq_align(
-            g.get_list_align_plt(), patron)
-        return pd_conteos, motif
+        df_conteos, df_info, motif, exp_reg = g.ploteo_logo_seq_align(patron)
+        return df_conteos, df_info, motif, exp_reg
     
     def generador_archivos(self, motifs_json, **kargs):
 
-        def archivo_excel(excel_write=xlsxwriter.Workbook()):
+        def archivo_html():
+            principal=""""""
+            content_principal=""""""
+            row_principal =""""""
+            col_1 =""""""
+            col_row_1 = """"""
+            col_row_2 = """"""
+            col_2 =""""""
+            list_info_motifs = motifs_json['Alineaciones']
+                # Recorremos la lista desde donde se quedo o en 0 hasta la longitud de la lista
+            print("html in process")
+            for item_dict in tqdm(list_info_motifs):
+                # Se toma la imagen del motif actual
+                filenamepng = os.path.join(
+                    EXP_FOLDER, "motifs_html","img", (item_dict["patron"]+".png"))
+                
+                #Despues el alineamiento: posicion y secuencia de se alineo
+                
+                tabla1 = """"""  
+                tabla1 += """   <p class="font-weight-bold">Alineamiento</p> """   
+                
+                x = """"""
+                x += """ 
+                <tr>
+                    <th>secuencia</th>
+                    <th>posicion</th>
+                    <th>alineamiento</th>
+                </tr>
+                """ 
+                #ciclo while para escribir las secuencias que se estan alineando
+                for pos in item_dict["alineamientos"]:              
+                    x += """ 
+                    <tr>
+                        <th>{secuencia}</th>
+                        <th>{posicion}</th>
+                        <th>{ali}</th>
+                    </tr>
+                    """.format(secuencia = str(pos["secuencia"]), posicion= str(pos["posicion"]), ali = str(pos["alineamiento"]))
+                    
+                tabla1 += """ 
+                    <table class="table table-active">
+                        {tabla_contenido} 
+                    </table>
+                """.format(tabla_contenido = x)
+                    
+                col_row_1 +="""
+                    <div class ="row my-2 justify-content-center">
+                        {tabla} 
+                    </div>
+                """.format(tabla = tabla1)
+
+                
+                #Se escribe la matriz de conteo
+                
+                #Se escribe la cabecera
+                tabla2 =""""""
+                tabla2 += """   <p class="font-weight-bold">Matriz de conteo</p> """  
+                
+                x = """"""
+                x += """ 
+                <tr>
+                    <th>Posición</th>
+                    <th>A</th>
+                    <th>C</th>
+                    <th>T</th>
+                    <th>G</th>
+                </tr>
+                """
+                
+                y=""""""
+                # Se toma la lista de diccionarios, donde las llaves principales son el numero de fila y los items son diccionarios con la llave de nucleotido y el valor es la frecuencia del nucleotido
+                matriz_conteo = item_dict["matriz_conteo"]
+                #Ciclo para escribir los valores de la matriz
+                for k in range(len(matriz_conteo)):
+                    
+                    y += """ <th>{pos}</th> 
+                    """.format(pos=str(k))
+                    # Cada valor se escribe en la posicion que le corresponda
+                    for key, value in matriz_conteo[str(k)].items():
+                        y += """ <th>{value}</th> 
+                    """.format(value=str(value))
+                
+                    x += """
+                    <tr>
+                        {datos}
+                    </tr>
+                    """.format(datos = y)
+                    
+                    y = """"""
+                
+                tabla2 += """ 
+                    <table class="table table-active">
+                        {tabla_contenido} 
+                    </table>
+                """.format(tabla_contenido = x)
+                    
+                col_row_2 +="""
+                    <div class ="row my-2 justify-content-center">
+                        {tabla} 
+                    </div>
+                """.format(tabla = tabla2)  
+                
+                col_1 += """
+                <div class ="col align-items-center">
+                    {row1}
+                    {row2}
+                </div>
+                """.format(row1=col_row_1, row2=col_row_2)
+                
+                #se inserta la imagen y el motif
+                col_2 += """
+                    <div class ="col align-items-center">
+                        <img class="align-self-center" src = "img/{patron}.png" alt = "{patron}.png">
+                        <p class="font-weight-bold"> motif: {motif} </p>
+                    </div>
+                """.format(patron = item_dict["patron"], motif = item_dict["motif"])
+                
+                row_principal += """<div class ="row text-center justify-content-center my-2">
+                    {col1}
+                    {col2}
+                </div>""".format(col1=col_1, col2=col_2)
+
+                #Escribe el primero el patron
+                content_principal += """
+                <section>
+                    <h3 class="my-2"> Patron {patron} </h3>
+                    {row_prin}
+                </section>
+                
+                """ .format(patron=item_dict["patron"], row_prin = row_principal)
+            
+                row_principal =""""""
+                col_1 =""""""
+                col_row_1 = """"""
+                col_row_2 = """"""
+                col_2 =""""""
+                    
+            principal += """
+            <!DOCTYPE html>
+            <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+                    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+                    <title>motifs</title>
+                </head>
+                <body class="mx-5">
+                    <div class=" row  m-5 text-center justify-content-center">
+                        <h1>Motifs hallados</h1>
+                    </div>
+                    {contenido}
+                </body>
+            </html>
+            """.format(contenido = content_principal)
+
+            return principal
+                  
+                
+            
+        
+        def archivo_excel(excel_writer=xlsxwriter.Workbook()):
             items = 0
             #La intencion de ponerlo en un while es para evitar que toda la informacion se ponga en una sola hoja,
             #para eso se recorrera por partes la lista se fuese necesario, el limite por el momento es 100000 filas
@@ -102,8 +273,16 @@ class Alineador_multi(object):
                     j += 1
                     paper.write(row, col, "Patron")
                     paper.write(row, col+j, list_info_motifs[itm]["patron"])
+                    paper.write(row+1, col, "Motif")
+                    paper.write(row+1, col+j, list_info_motifs[itm]["motif"])
+                    paper.write(row+2, col, "Expresion Regular")
+                    paper.write(
+                        row+2, col+j, list_info_motifs[itm]["expresion_regular"])
+                    paper.write(row+3, col, "Longitud motif")
+                    paper.write(row+3, col+j, list_info_motifs[itm]["longitud_motif"])
+                    
                     #Despues el alineamiento: posicion y secuencia de se alineo
-                    i += 2
+                    i += 5
                     paper.write(row+i, col+j, "Alineamiento")
                     i += 1
                     paper.write(row+i, col+j, "secuencia")
@@ -117,7 +296,7 @@ class Alineador_multi(object):
                         paper.write(row+i, col+j+2, str(pos["alineamiento"]))
 
                     #recolocacion de posciones
-                    i = 2
+                    i = 5
                     j = 5
                     #Se escribe la matriz de conteo
                     # Se toma la lista de diccionarios, donde las llaves principales son el numero de fila y los items son diccionarios con la llave de nucleotido y el valor es la frecuencia del nucleotido
@@ -125,6 +304,7 @@ class Alineador_multi(object):
                     #Se escribe la cabecera
                     paper.write(row+i, col+j, "Matriz de conteo")
                     i += 1
+                    #modificar 
                     paper.write(row+i, col+j, "Posición")
                     paper.write(row+i, col+j+1, "A")
                     paper.write(row+i, col+j+2, "C")
@@ -144,19 +324,48 @@ class Alineador_multi(object):
                                 paper.write(row+i, col+j+3, value)
                             elif key == "G":
                                 paper.write(row+i, col+j+4, value)
+                    
+                    #recolocacion de posciones
+                    i = 5
+                    j = 12  # se recorren hasta la columna 14
+                    # Se toma la lista de diccionarios, donde las llaves principales son el numero de fila y los items son diccionarios con la llave de nucleotido y el valor es la frecuencia del nucleotido
+                    matriz_info = list_info_motifs[itm]["matriz_info"]
+                    #Se escribe la cabecera
+                    paper.write(row+i, col+j, "Matriz de informacion")
+                    i += 1
+                    paper.write(row+i, col+j, "Posición")
+                    paper.write(row+i, col+j+1, "A")
+                    paper.write(row+i, col+j+2, "C")
+                    paper.write(row+i, col+j+3, "T")
+                    paper.write(row+i, col+j+4, "G")
+                    #Ciclo para escribir los valores de la matriz
+                    for k in range(len(matriz_info)):
+                        i += 1
+                        paper.write(row+i, col+j, str(k))
+                        # Cada valor se escribe en la posicion que le corresponda
+                        for key, value in matriz_info[str(k)].items():
+                            if key == "A":
+                                paper.write(row+i, col+j+1, value)
+                            elif key == "C":
+                                paper.write(row+i, col+j+2, value)
+                            elif key == "T":
+                                paper.write(row+i, col+j+3, value)
+                            elif key == "G":
+                                paper.write(row+i, col+j+4, value)
 
-                    j = 14  # se recorren hasta la columna 14
+                    i = 5
+                    j = 19  # se recorren hasta la columna 19
+                    
                     #se inserta la imagen al 50% de si proporcion
                     paper.insert_image(
                         row+2, col+j, filenamepng, {'x_scale': 0.5, 'y_scale': 0.5})
                     #por ultimo se escribe el motif
-                    paper.write(row+i+2, col, "motif")
-                    paper.write(row+i+2, col+1, list_info_motifs[itm]["motif"])
+                    
                     if itm == len(motifs_json['Alineaciones'])-1:
                         paper.write(row+i+3, col, "Numero de alineaciones")
                         paper.write(row+i+3, col+1, motifs_json["Num_alineaciones"])
                     #se suma la longitud de la matriz de conteo mas 10 para escribir los nuevos datos
-                    row += len(matriz_conteo) + 10
+                    row += len(list_info_motifs[itm]["alineamientos"]) + 14
                     col = 0
                     i = 0
                     j = 0
@@ -206,6 +415,7 @@ class Alineador_multi(object):
         #se asigna la ruta completa tanto para el nombre del archivo json y xlsx
         filename = os.path.join(EXP_FOLDER, "motifs_json", x)
         filenamexlsx = os.path.join(EXP_FOLDER, "motifs_excel", x)
+        # filenamehtml = os.path.join(EXP_FOLDER, "motifs_html")
 
         files_dir_png = os.path.join(EXP_FOLDER, "motifs_png", "*.png")
 
@@ -225,12 +435,32 @@ class Alineador_multi(object):
             else:
                 with xlsxwriter.Workbook(filenamexlsx+'.xlsx') as excel_writer:
                     archivo_excel(excel_writer)
-
+            
+            # if os.path.isfile(filenamehtml+os.path.sep+"index.html"):
+            #     with open(filenamehtml+os.path.sep+"index.html","w") as file_html:
+            #         file_html.write(archivo_html())
+                
+            #     with ZipFile(filenamehtml +os.path.sep + x+".zip","w") as zip_file:
+            #         zip_file.write(filenamehtml +os.path.sep+"img")
+            #         zip_file.write(filenamehtml+os.path.sep+"index.html")
+                
+            # else:
+            #     with open(filenamehtml+os.path.sep+"index.html","x") as file_html:
+            #         file_html.write(archivo_html())
+                
+            #     #Se crea un archivo zip que contiene el html  
+            #     with ZipFile(filenamehtml +os.path.sep + x+".zip","x") as zip_file:
+            #         zip_file.write(filenamehtml +os.path.sep+"img")
+            #         zip_file.write(filenamehtml+os.path.sep+"index.html")
+            
+                
             #remoción de los archivos png (LOGOS) generados
             files_png = glob(files_dir_png)
             for f in files_png:
                 os.remove(f)
-
+            # os.remove(filenamehtml+os.path.sep+"index.html")
+            
+            
         except IOError as e:
             print(f'Hubo un error en la escritura del archivo \n'+str(e))
 
@@ -329,11 +559,11 @@ class Alineador_multi(object):
             for pos in dict_posiciones: #info_patron["Posiciones"]:
                 # patron_evaluar = patron_original
                 #Si la longitud del patron es menos a 6
-                if len(patron_evaluar) < 6 and (pos["posicion"]-1)+6 < len(self.secuencias[pos["sequencia"]])-1:
+                if len(patron_evaluar) < self.longitud_minina_cre and (pos["posicion"]-1)+self.longitud_minina_cre < len(self.secuencias[pos["sequencia"]])-1:
                     # Se le agregan otras seis posiciones
-                    patron_evaluar = self.secuencias[pos["sequencia"]][(pos["posicion"]-1):(pos["posicion"]-1)+6]
+                    patron_evaluar = self.secuencias[pos["sequencia"]][(pos["posicion"]-1):(pos["posicion"]-1)+self.longitud_minina_cre]
                 # si la longitud es menor a  6 pero la(s) posiciones
-                elif (pos["posicion"]-1)+6 >= len(self.secuencias[pos["sequencia"]])-1 and len(patron_evaluar) < 6:
+                elif (pos["posicion"]-1)+self.longitud_minina_cre >= len(self.secuencias[pos["sequencia"]])-1 and len(patron_evaluar) < self.longitud_minina_cre:
                     #Sino se rompe el ciclo
                     pos_delante = 0
                     ban = False
@@ -471,14 +701,16 @@ class Alineador_multi(object):
                     alineamiento = pre_ali[key][k] # se toma el patron alineado compuesto
                     pos_align = pos[k]
                     #Si la posicion menos las pociones hacia atras que necesite el patron/secuencia alineada para llegar a una longitud de 6 y si el mismo patron/secuencia es menor a seis 
-                    if pos_align-(6-len(alineamiento)) > 0 and len(alineamiento) < 6:  
+                    if pos_align-(self.longitud_minina_cre-len(alineamiento)) > 0 and len(alineamiento) < self.longitud_minina_cre:
                         # Si es menor a 6, se le acompletara con las letras detras del patron hasta llegar a 6
-                        pos_align = pos[k]-(6-len(alineamiento)) #Primero toma la posicion modificada
+                        # Primero toma la posicion modificada
+                        pos_align = pos[k] - \
+                            (self.longitud_minina_cre-len(alineamiento))
                         alineamiento = self.secuencias[key][pos_align:pos[k]] + str(alineamiento) # y despues el nuevo alineamiento
                         
                         
                     #Si la posicion menos las pociones hacia atras que necesite el patron/secuencia alineada para llegar a una longitud de 6 y si el mismo patron/secuencia es menor a seis
-                    elif pos_align-(6-len(alineamiento)) <= 0 and len(alineamiento) < 6:
+                    elif pos_align-(self.longitud_minina_cre-len(alineamiento)) <= 0 and len(alineamiento) < self.longitud_minina_cre:
                         pos_atras = 0
                         brk_menor_seis = False
                         break 
@@ -606,10 +838,11 @@ class Alineador_multi(object):
         except Exception as e:
             print("Error en el Archivo: " + str(e))
     
-    def alineador_multi(self):
+    def alineador(self):
         patrones = self.get_json_patrones()  # se extrae la informacion del archivo JSON
         alineamiento_retorno = [] #Para guardar todos los alineamientos encontrados
         list_posiciones = [] #Para guardar las posiciones en especifico
+        list_animoacidos = [] #lista de los aninoaciodos
         list_patrones=[] #Para la lista de patrones
         
         for info_patron in tqdm(patrones["Patrones"]):
@@ -630,34 +863,42 @@ class Alineador_multi(object):
                 if (len(aux) == len(rec_ali)) and (len(new_posiciones) == len(posiciones)): #Si las longitudes de las alienaciones de enfrente son iguales a las de atras 
                     # print(aux.copy()) #imprime lo que tienes de las alienaciones completas
                     # el patron alineado es mayor a 6 nucleotidos or es un multiplo de 3
-                    if(len(list(aux.values())[0][0]) >= 6):     # or (len(list(aux.values())[0][0]) % 3 == 0):
+                    # or (len(list(aux.values())[0][0]) % 3 == 0):
+                    if(len(list(aux.values())[0][0]) >= self.longitud_minina_cre):
                         alineamiento_retorno.append(aux.copy()) #Agregalo a la lista grande
                         list_posiciones.append(new_posiciones.copy()) #se agrega la que tiene las posiones que retrocediron
                         list_patrones.append(info_patron["Patron"]) #Agrega al patron
+                        list_animoacidos.append(info_patron["Traduccion_aminoacido"])
                     
                 else: #sino
                     # print(pre_ali.copy()) #imprime lo resultante de enfrente                                    if((aux.get.values()[0][0]) >= 6) or ((aux.get.values()) % 3 == 0):
-                    if(len(list(rec_ali.values()[0][0])) >= 6):   # or (len(list(rec_ali.values()[0][0])) % 3 == 0):
+                    # or (len(list(rec_ali.values()[0][0])) % 3 == 0):
+                    if(len(list(rec_ali.values()[0][0])) >= self.longitud_minina_cre):
                         alineamiento_retorno.append(rec_ali.copy()) #copialo a la lista grande
                         #quedate con las posiciones originales
                         list_posiciones.append(posiciones) 
                         # Agrega al patron
                         list_patrones.append(info_patron["Patron"])
+                        list_animoacidos.append(
+                            info_patron["Traduccion_aminoacido"])
                            
             else:  # Si la longitud de rec_ali no fue igual de las posiciones
                 #Se toma el patron tal cual junto con las posiciones actuales
-                if (len(info_patron["Patron"]) >= 6): # or (len(info_patron["Patron"]) % 3 == 0)):
+                # or (len(info_patron["Patron"]) % 3 == 0)):
+                if (len(info_patron["Patron"]) >= self.longitud_minina_cre):
                     alineamiento_retorno.append(info_patron["Patron"])
                     list_posiciones.append(posiciones)
-                    list_patrones.append(info_patron["Patron"])  # Agrega al patron
+                    list_patrones.append(info_patron["Patron"])# Agrega al patron
+                    list_animoacidos.append(info_patron["Traduccion_aminoacido"])
             
             
             rec_ali.clear()
             aux.clear()
             
         json_resultados = self.muestra_resultados_json(
-            alineamiento_retorno, list_posiciones, list_patrones)
+            alineamiento_retorno, list_posiciones, list_patrones, list_animoacidos)
         self.generador_archivos(json_resultados, **patrones["Configuracion"])
+        return json_resultados
         # print(alineamiento_retorno)
         # print(list_posiciones)
             

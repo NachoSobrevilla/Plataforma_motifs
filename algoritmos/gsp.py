@@ -222,14 +222,23 @@ class GSP(object):
         #frecuent_list.pop()
         if self.get_debug == True:
             print(frecuent_list)
-
+    
+    #funcion dedica para traducir los patrones frecuentes de ADN a Aminoacidos
     def traductorCodon(self, codon):
         global traductor
         if len(codon) > 2:
-            traductor.setCodon(codon)
-            return traductor.getCodonCoded()
+            tra = ''  # traduccion final
+            recorridos = int(round(len(codon)/3, 1))
+
+            for i in range(recorridos):
+                traductor.setCodon(codon[i*3:(i+1)*3])
+                tra += traductor.getCodonCoded()
+
+            return tra
+        
         else:
             return ''
+        
     
     def info_patrones(self):
         key_seq = lambda x: self.keys_seqs[x] if len(self.keys_seqs) else x

@@ -10,6 +10,8 @@ class Estructurador(object):
                                 #-BASICOS(1)-----|----(2)----------------|------(3)------|-4-|-0-|
         self.lista_nucleotidos = ["A","C","G","T","W","S","M","K","R","Y","B","D","H","V","N","Z"] #lista de bases
         self.lista_complemento = ["T","G","C","A","W","S","K","M","Y","R","V","H","D","B","N","Z"] #Lista de completentos 
+        self.lista_exp_regular = ["A","C","G","T","[A,T]","[C,G]","[A,C]","[G,T]","[A,G]","[C,T]","[C,G,T]","[A,G,T]","[A,C,T]","[A,C,G]","[A,C,G,T]",""]
+                                # UNA BASE------ | -------------------DOS BASES----------------- | --------------TRES BASES------------- | CUATRO BASES | CERO BASES |
         self.lista_nucleotidos_basicos = ["A","C","G","T"]
         #Tabla de resetacion de las bases/simbolos
         self.tabla_representacion = np.array([
@@ -48,15 +50,17 @@ class Estructurador(object):
     
     def get_estructura(self):
         com = ""
+        expre = ""
         for i in range(len(self.alineaciones)):
             for j in range(len(self.tabla_representacion)):
                 np_array_ali = self.alineaciones.iloc[i]>0
                 if np.array_equal(np_array_ali,self.tabla_representacion[j]):
                     com += self.lista_nucleotidos[j]
+                    expre += self.lista_exp_regular[j]
                     break
         
-        return com
+        return com, expre
             
-        
+    
         
 

@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 import Estructurador_patron as eptr
@@ -25,12 +27,12 @@ class Graficador(object):
         dict_conteos = {
             "A": [0 for i in range(len(self.list_align_plt[0]))],
             "C": [0 for i in range(len(self.list_align_plt[0]))],
-            "T": [0 for i in range(len(self.list_align_plt[0]))],
-            "G": [0 for i in range(len(self.list_align_plt[0]))]
+            "G": [0 for i in range(len(self.list_align_plt[0]))],
+            "T": [0 for i in range(len(self.list_align_plt[0]))]
         }
         
         
-        count_head = ["columna " +str(i+1) for i in range(len(self.list_align_plt[0]))]
+        # count_head = [str(i+1) for i in range(len(self.list_align_plt[0]))]
         idx=[i for i in range(len(self.list_align_plt[0]))]
         
         
@@ -56,20 +58,21 @@ class Graficador(object):
         # print("G: "+str(dict_conteos["G"]))
         # print("T: "+str(dict_conteos["T"]))
     
-        indices = np.arange(len(count_head))
+        # indices = np.arange(len(count_head))
         
         data_count = pd.DataFrame(dict_conteos)
         data_count["pos"] = idx
         data_count.set_index("pos", inplace=True)
         
+        return data_count
         # print(data_count)
         
-        dict_conteos.clear()
-        count_head.clear()
+        # dict_conteos.clear()
+        # count_head.clear()
         
-        motif = self.obtener_motif(data_count)
+        # motif = self.obtener_motif(data_count)
         # self.ploteo(data_count, motif)
-        self.ploteo_logo(data_count, motif)
+        # self.ploteo_logo(data_count, motif)
         
     
     def obtener_motif(self, dict_conteos ):
@@ -123,17 +126,22 @@ class Graficador(object):
         lgmkr = logomaker.Logo(pd_conteos)
         plt.show()
         
-    def ploteo_logo_seq_align(self, seq_ali = [], patron = ""):
-        w = len(seq_ali[0])
-        pd_conteos = logomaker.alignment_to_matrix(seq_ali)
-        # print(pd_conteos)
-        #print(type(pd_conteos))
-        #print(pd_conteos.iloc[0])
-        logomaker.Logo(pd_conteos,figsize=(w,4.5))
-        motif = self.obtener_motif(pd_conteos)
+    def ploteo_logo_seq_align(self, patron = ""):
+        w = len(self.list_align_plt[0])
+        # pd_conteos =    logomaker.alignment_to_matrix(seq_ali)
+        df_conteos = self.contador()  #logomaker.alignment_to_matrix()
+        # print(df_conteos)
+        #print(type(df_conteos))
+        #print(df_conteos.iloc[0])
+        df_info = logomaker.transform_matrix(df_conteos, pseudocount=0.0001, from_type="counts", to_type="information")
+        lm = logomaker.Logo(df_info,figsize=(w,4.5))
+        lm.ax.set_yticks([0,1,2])
+        lm.ax.set_xticks(range(0,w))
+        motif, exp_reg = self.obtener_motif(df_conteos)
         # print(motif)
-        plt.xlabel("posiciones")
-        plt.ylabel("frecuencias")
+        plt.xlabel("Posiciones")
+        plt.ylabel("Información (bits)")
+    
         if motif != "":
             plt.title("LOGO - "+motif)
             
@@ -142,29 +150,29 @@ class Graficador(object):
         
         plt.savefig(os.path.join(EXP_FOLDER, "motifs_png", patron)+".png")
         plt.close("all")
-        # plt.show()
+        plt.show()
         
-        return pd_conteos, motif
+        return df_conteos, df_info, motif, exp_reg
 
 # if __name__ == '__main__':
-    # list_ptt = ["CATGCCGCTG",
-    #             "GCTGTGANAC",
-    #             "TGTGANACAG",
-    #             "AGTGGTTTCG",
-    #             "CGTGTGAGGG",
-    #             "TGTGAGGGCT",
-    #             "GATGAGCCCA",
-    #             "TATGGAAAAA",
-    #             "TATGCGGTAA",
-    #             "CATGCCGCTG",      
-    #             "GCTGTGANAC",
-    #             "TGTGANACAG",
-    #             "AGTGGTTTCG",
-    #             "CGTGTGAGGG",
-    #             "TGTGAGGGCT",
-    #             "GATGAGCCCA",
-    #             "TATGGAAAAA",
-    #             "TATGCGGTAA"]
+#     list_ptt = ["CATGCCGCTG",
+#                 "GCTGTGANAC",
+#                 "TGTGANACAG",
+#                 "AGTGGTTTCG",
+#                 "CGTGTGAGGG",
+#                 "TGTGAGGGCT",
+#                 "GATGAGCCCA",
+#                 "TATGGAAAAA",
+#                 "TATGCGGTAA",
+#                 "CATGCCGCTG",      
+#                 "GCTGTGANAC",
+#                 "TGTGANACAG",
+#                 "AGTGGTTTCG",
+#                 "CGTGTGAGGG",
+#                 "TGTGAGGGCT",
+#                 "GATGAGCCCA",
+#                 "TATGGAAAAA",
+#                 "TATGCGGTAA"]
     # list_ptt = ['ATGCCGCT', 
     #             'ATGAGCCC', 
     #             'ATGGAAAA', 
@@ -178,9 +186,11 @@ class Graficador(object):
     #             "AACCACAG",
     #             "CCACGCAG"]
     # g = Graficador(list_align_plt=list_ptt)
-    # pd_conteos, motif = g.ploteo_logo_seq_align(g.get_list_align_plt())
+    # df_conteos, df_info, motif, exp_reg = g.ploteo_logo_seq_align("TG")
     # print("return")
-    # print(pd_conteos)
+    # print(df_conteos)
     # print(motif)
+    # print(df_info)
+    # print(exp_reg)
     
        

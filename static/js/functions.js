@@ -2,6 +2,67 @@
     var textseqs = 0;
     window.addEventListener('load', init, false)
 
+     //Lectura de archivo Fasta al subirlo a la plataforma
+    var inputFile = document.getElementById("inputFile");
+    if (inputFile != null) {
+        inputFile.addEventListener("change", function () {
+            var file = this.files[0]; //toma el archivo contenido 
+            var reader = new FileReader(); //crea un lector de archivos
+            var offset = 0;
+            var chunkSize = assingChunck(); //tamaño del bloque de lectura
+            console.log("Leyendo archivo");
+            //Lectura de archivo Fasta
+            reader.onload = function () {
+                console.log("Entra al onload");
+                var view = new Uint8Array(reader.result);
+                for (let index = 0; index < view.length; index++) {
+                    if (String.fromCharCode(view[index]) == ">" ){
+                        textseqs++;
+                        console.log(textseqs);
+                    }
+                }
+                
+                offset += chunkSize;
+                seek();
+            }
+            reader.onerror = function () { console.log("error"); };
+            seek();
+            function seek() {
+                var end = offset + chunkSize;
+                if (end <= file.size) {
+                    var slice = file.slice(offset, end);
+                    console.log(end);
+                    reader.readAsArrayBuffer(slice);                    
+                }else {
+                    document.getElementById("sendSequenceFile").style.display = "block"; //muestra el boton de enviar
+                    showConfigAlgorithm("file"); //mostrar el formulario de configuracion
+                    return;
+                }
+                
+            }
+            function assingChunck(){
+                if (file.size <= 1024){
+                    return file.size
+                }else if(file.size > 1024 && file.size <= 64*1024){
+                    return 1024
+                }else if(file.size > 64*1024 && file.size <= 256*1024){
+                    return 64*1024
+                }else if(file.size > 256*1024 && file.size <= 1024*1024){
+                    return 256*1024
+                }else if(file.size > 1024*1024 && file.size <= 64*1024*1024){
+                    return 1024*1024
+                }else if(file.size > 64*1024*1024 && file.size <= 256*1024*1024){
+                    return 64*1024*1024
+                }else{
+                    return 256*1024*1024
+                }
+            }
+        });
+        } else {
+            console.log("No se pudo mostrar el archivo");
+            alert("No se pudo mostrar el archivo");
+        }
+
     function init() {
         document.getElementById("formControlInputSelect").selectedIndex = -1;
         // document.getElementById("selectAlgorithm").selectedIndex = -1;
@@ -17,41 +78,33 @@
         mostrarArchivos();
         // paginacionArchivos();
 
-        //Lectura de archivo Fasta al subirlo a la plataforma
-        var inputFile = document.getElementById("inputFile");
-        if (inputFile != null) {
-            inputFile.addEventListener("change", function () {
-                var file = this.files[0]; //toma el archivo contenido 
-                var reader = new FileReader(); //crea un lector de archivos
-                reader.onload = function (progressEvent) {
-                    // Entire file
-                    // console.log(this.result);
-                    // By lines
-                    textseqs = 0;
-                    var lines = this.result.split('\n'); //separa el archivo por lineas
+    
+                // reader.onload = function (progressEvent) {
+                //     // Entire file
+                //     // console.log(this.result);
+                //     // By lines
+                //     textseqs = 0;
+                //     var lines = this.result.split('\n'); //separa el archivo por lineas
 
-                    document.getElementById("previsualSequenceAnalisisFile").value = ''; //limpia el campo de texto
-                    console.log('cargando datos de archivo');
-                    for (var line = 0; line < lines.length; line++) { //recorre las lineas
-                        // document.getElementById("previsualSequenceAnalisisFile").value += lines[line] + "\n"; //agrega las lineas al campo de texto
-                        // if (lines[line].search('>') != -1) { //si la linea contiene una secuencia de fasta
-                        //     textseqs += 1; //cuenta las keys de la secuencia
-                        // }
-                        if(lines[line][0] == '>'){
-                            textseqs += 1;
-                        }else{
-                            continue;
-                        }
+                //     document.getElementById("previsualSequenceAnalisisFile").value = ''; //limpia el campo de texto
+                //     console.log('cargando datos de archivo');
+                //     for (var line = 0; line < lines.length; line++) { //recorre las lineas
+                //         // document.getElementById("previsualSequenceAnalisisFile").value += lines[line] + "\n"; //agrega las lineas al campo de texto
+                //         // if (lines[line].search('>') != -1) { //si la linea contiene una secuencia de fasta
+                //         //     textseqs += 1; //cuenta las keys de la secuencia
+                //         // }
+                //         if(lines[line][0] == '>'){
+                //             textseqs += 1;
+                //         }else{
+                //             continue;
+                //         }
 
-                    }
-                    // document.getElementById("sendSequenceFile").style.display = "block"; //muestra el boton de enviar
-                    showConfigAlgorithm("file"); //mostrar el formulario de configuracion
-                };
-                reader.readAsText(file);
-            });
-        } else {
-            console.log("No se pudo mostrar el archivo");
-        }
+                //     }
+                //     // document.getElementById("sendSequenceFile").style.display = "block"; //muestra el boton de enviar
+                //     showConfigAlgorithm("file"); //mostrar el formulario de configuracion
+                // };
+                // reader.readAsText(file);
+            
         //lectura de contenido de archivo
         // function readFile(evt){
         //     var file = evt.target.files[0];
@@ -203,7 +256,7 @@
                 //     pageSize: 10,
                 //     autoHidePrevious: true,
                 //     autoHideNext: true,
-                //     callback: function(data, pagination) {
+                //      function(data, pagination) {
                 //         // template method of yourself
                 //         var html = template(data);
                 //         $('#tabla_exp').html(html);
@@ -315,8 +368,8 @@
         limpiarCamposTxt();
 
 
-        document.getElementById("sendSequenceTxt").style.display = "none";
-        document.getElementById("sendSequenceFile").style.display = "none";
+        document.getElementById("btnSentSeqText").style.display = "none";
+        document.getElementById("btnSentSeqFile").style.display = "none";
         document.getElementById("principalFormFile").style.display = "none";
 
         // document.getElementById("resultForm").style.display = "none";
@@ -341,26 +394,36 @@
 
     function limpiarCamposFile() {
         document.getElementById("inputFile").value = '';
-        document.getElementById("previsualSequenceAnalisisFile").value = '';
+        // document.getElementById("previsualSequenceAnalisisFile").value = '';
     }
 
     function limpiarCampoConfig() {
         document.getElementById("minSup").value = '';
+        document.getElementById("LMC").value = '';
+        document.getElementById("tolerancia_delante").value = '';
+        document.getElementById("tolerancia_atras").value = '';
+        
         document.getElementById("infoMinSup").title = 'Ingrese una secuencia de ADN para comenzar';
         document.getElementById("selectAlgorithm").selectedIndex = -1;
         document.getElementById("selectAlgorithm").children[0].style.display = "none";
         document.getElementById("selectAlgorithm").children[1].style.display = "none";
         document.getElementById("selectAlgorithm").children[2].style.display = "none";
         document.getElementById("infoAlgoritmo").title = 'Ingrese una secuencia de ADN para comenzar';
+        document.getElementById("btnSentSeqText").display = "none";
+        document.getElementById("btnSentSeqFile").display = "none";
+
 
 
         // document.getElementById("formControlInputSelect").selectedIndex = -1;
     }
 
-    function selectProccess() {
+    function selectProcess() {
         var item_selected = document.getElementById("formControlInputSelect");
         textseqs = 0;
         limpiarCampoConfig()
+        document.getElementById("btnSentSeqFile").style.display = "none";
+        document.getElementById("btnSentSeqText").style.display = "none";
+        document.getElementById("configAlgorithm").style.display = "none";
         switch (item_selected.options[item_selected.selectedIndex].value) {
 
             case "inputManual":
@@ -373,7 +436,7 @@
             case "inputFile":
                 limpiarCamposFile();
                 document.getElementById("principalFormFile").style.display = "block";
-                document.getElementById("sendSequenceFile").style.display = "none";
+                document.getElementById("btnSentSeqFile").style.display = "none";
                 document.getElementById("principalFormTxt").style.display = "none";
 
                 break;
@@ -448,6 +511,7 @@
         }
         
     }
+
     function cleanStringSequences() {
         var mensaje = confirm("¿Está seguro que desea limpiar la lista de secuencias?");
         if (mensaje == true) {
@@ -478,6 +542,8 @@
 
     function showConfigAlgorithm(process) {
         limpiarCampoConfig()
+        btntxt  =document.getElementById("btnSentSeqText");
+        btnfile =document.getElementById("btnSentSeqFile");
 
         if (textseqs < 2) {
             document.getElementById("selectAlgorithm").children[0].style.display = "block";
@@ -490,12 +556,17 @@
             document.getElementById("selectAlgorithm").children[2].style.display = "block";
         }
 
-        if (process == "txt") {
-            document.getElementById("sendSequenceTxt").style.display = "block";
-            document.getElementById("sendSequenceFile").style.display = "none";
-        } else if (process == "file") {
-            document.getElementById("sendSequenceTxt").style.display = "none";
-            document.getElementById("sendSequenceFile").style.display = "block";
+        if ((process == "txt"  || btnfile.style.display == "block")) {
+            btnfile.style.display = "none";
+            btntxt.style.display = "block";
+            // if (btnfile.style.display == "block"){ btnfile.style.display = "none"; }
+            
+        } else if (process == "file" || btntxt.style.display == "block") {
+            btntxt.style.display = "none";
+            btnfile.style.display = "block";
+            // if (btntxt.style.display == "block"){ btntxt.style.display = "none"; 
+            // if(btntxt.style.display == "block"){ btntxt.style.display = "none"; }
+              
         }
 
         document.getElementById("configAlgorithm").style.display = "block";
@@ -540,7 +611,11 @@
     }
 
     function mostrarDatosJSON(p) {
-        var pos = dataReturn.Patrones[p].Posiciones;
+        // var pos = dataReturn.Patrones[p].Posiciones;
+        console.log(dataReturn.Alineaciones[p].alineamientos);
+        var pos = dataReturn.Alineaciones[p].alineamientos;
+        console.log(pos);
+
         var table = document.createElement('table');
         var thead = document.createElement('thead');
         var tbody = document.createElement('tbody');
@@ -558,36 +633,45 @@
         table.appendChild(tbody);
         th.classList.add("text-center");
 
-        th.innerHTML = 'Sequencia';
+        th.innerHTML = 'Alineamiento';
         tr.appendChild(th);
+
         th = document.createElement('th');
         th.innerHTML = 'Posicion';
-
         tr.appendChild(th);
+
+        th = document.createElement('th');
+        th.innerHTML = 'Secuencia';
+        tr.appendChild(th);
+
         thead.appendChild(tr);
 
 
         for (var i = 0; i < pos.length; i++) {
             tr = document.createElement('tr');
-
             var td = document.createElement('td');
 
             // td.style.alignContent = "center";
             td.classList.add("text-center");
             td.align = "center";
             td.vAlign = "middle";
-            td.innerHTML = pos[i].sequencia;
+            td.innerHTML = pos[i].alineamiento;
             tr.appendChild(td);
 
             td = document.createElement('td');
-
             td.classList.add("text-center");
             td.align = "center";
             td.vAlign = "middle";
-
             td.innerHTML = pos[i].posicion;
             td.style.alignContent = "center";
+            tr.appendChild(td);
 
+            td = document.createElement('td');
+            td.classList.add("text-center");
+            td.align = "center";
+            td.vAlign = "middle";
+            td.innerHTML = pos[i].secuencia;
+            td.style.alignContent = "center";
             tr.appendChild(td);
 
             tbody.appendChild(tr);
@@ -638,7 +722,10 @@
                     "min_sup": $('#minSup').val(),
                     "keys_sequences": k,
                     "sequence": s,
-                    "input": "Manual"
+                    "input": "Manual",
+                    "longtud_minina": $('#LMC').val(),
+                    "tolerancia_delante":$('#tolerancia_delante').val(),
+                    "tolerancia_atras":$('#tolerancia_atras').val()
                 }];
                 console.log(sendData);
                 $.ajax({
@@ -723,11 +810,16 @@
                 console.log($('#formControlInputSelect').val());
 
                 var form_data = new FormData();
+                console.log($('tolerancia_delante').val());
+                console.log($('tolerancia_atras').val());
 
                 form_data.append('Algoritmo', $('#selectAlgorithm').val());
                 form_data.append('min_sup', $('#minSup').val());
                 form_data.append('file', $('#inputFile').prop("files")[0]);
                 form_data.append('input', 'Archivo');
+                form_data.append('longtud_minina', $('#LMC').val());
+                form_data.append('tolerancia_delante', $('#tolerancia_delante').val());
+                form_data.append('tolerancia_atras', $('#tolerancia_atras').val());
                 // form_data.append('input', $('#formControlInputSelect').val());
 
                 $.ajax({
@@ -812,19 +904,35 @@
         $tabla.empty();
         $tabla.append('<thead class="thead-light text-center " align = "center"> <tr>' +
             '<th>Patron</th>' +
-            '<th>Longitud</th>' +
-            '<th>Ocurrencias</th>' +
-            '<th>Posiciones</th>' +
-            '</tr>');
-        $tablabody = $('<tbody></tbody>');
-        for (var i = 0; i < data.Patrones.length; i++) {
-            // $fila = $("<tr onClick=mostrarDatosJSON("+i+") data-toggle='modal' data-target='#PatternsModal'></tr>");
-            $fila = $("<tr data-toggle='modal' data-target='#PatternsModal'></tr>");
+            '<th>Motif</th>' +
+            '<th>Expresión Regular</th>' +
+            '<th>Ocurrencias del Patron</th>' +
+            '<th>Longitud del motif </th>' +
+            '<th>Traducciona a aminoáciodos </th>' +
+            '<th>Detalles </th>' +
 
-            $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Patron + '</td>');
-            $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Longitud + '</td>');
-            $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Ocurrencias + '</td>');
-            $fila.append('<td class="text-center" align="center" valign="middle" >' + '<button type="button" class="btn  btn-warning"' + "onClick=mostrarDatosJSON(" + i + ")>" + "Posiciones" + '</button>' + '</td>');
+            // '<th>Patron</th>' +
+            // '<th>Longitud</th>' +
+            // '<th>Ocurrencias</th>' +
+            // '<th>Posiciones</th>' +
+            '</tr> </thead>');
+        $tablabody = $('<tbody></tbody>');
+        for (var i = 0; i < data.Alineaciones.length; i++) {
+        // for (var i = 0; i < data.Patrones.length; i++) {
+            // $fila = $("<tr onClick=mostrarDatosJSON("+i+") data-toggle='modal' data-target='#PatternsModal'></tr>");
+            // console.log(data.Alineaciones[i]);
+            $fila = $("<tr data-toggle='modal' data-target='#PatternsModal'></tr>");
+            $fila.append('<td>' + data.Alineaciones[i].patron + '</td>');
+            $fila.append('<td>' + data.Alineaciones[i].motif + '</td>');
+            $fila.append('<td>' + data.Alineaciones[i].expresion_regular + '</td>');
+            $fila.append('<td>' + data.Alineaciones[i].ocurrencias_patron + '</td>');
+            $fila.append('<td>' + data.Alineaciones[i].longitud_motif + '</td>');
+            $fila.append('<td>' + data.Alineaciones[i].traduccion_aminoacido + '</td>');
+            // $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Patron + '</td>');
+            // $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Longitud + '</td>');
+            // $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Ocurrencias + '</td>');
+            // $fila.append('<td class="text-center" align="center" valign="middle" >' + '<button type="button" class="btn  btn-warning"' + "onClick=mostrarDatosJSON(" + i + ")>" + "Posiciones" + '</button>' + '</td>');
+            $fila.append('<td class="text-center" align="center" valign="middle" >' + '<button type="button" class="btn  btn-warning"' + "onClick=mostrarDatosJSON(" + i + ")>" + "Detalles" + '</button>' + '</td>');
 
             $tablabody.append($fila);
         }
@@ -858,7 +966,7 @@
         aJSON.classList.add("btn-lg");
         aJSON.classList.add("my-2");
         aJSON.title = "Descarga los resultados en un archivo CSV";
-        aJSON.innerHTML = "Descargar JSON";
+        aJSON.innerHTML = "Descargar JSON Patrones frecuentes";
 
         // $patrones.appendChild(a)
         //$patrones.append(a);
@@ -877,7 +985,37 @@
         aCSV.classList.add("btn-lg");
         aCSV.classList.add("my-2");
         aCSV.title = "Descarga los resultados en un archivo CSV";
-        aCSV.innerHTML = "Descargar CSV";
+        aCSV.innerHTML = "Descargar CSV Patrones frecuentes";
+
+        bttdiv.append(aCSV);
+
+        //boton de descarga de archivo xlsx motifs
+        var aXLS = document.createElement('a');
+        aXLS.id = "downCurrentFileXLS";
+        aXLS.href = "/descarga/experimentos/currentXLS/" //"{{ url_for('getExpetimento', filetype = 'currentJSON') }}";
+        aXLS.target = "_blank";
+        aXLS.classList.add("btn");
+        aXLS.classList.add("btn-info");
+        aXLS.classList.add("form-control");
+        aXLS.classList.add("btn-lg");
+        aXLS.classList.add("my-2");
+        aXLS.title = "Descarga los resultados en un archivo xls de los motifs hallados";
+        aXLS.innerHTML = "Descargar xls";
+
+        bttdiv.append(aCSV);
+
+        //boton de descarga de archivo xlsx motifs
+        var aJSONm = document.createElement('a');
+        aJSONm.id = "downCurrentFileJSONm";
+        aJSONm.href = "/descarga/experimentos/currentJSONmotifs/" //"{{ url_for('getExpetimento', filetype = 'currentJSON') }}";
+        aJSONm.target = "_blank";
+        aJSONm.classList.add("btn");
+        aJSONm.classList.add("btn-info");
+        aJSONm.classList.add("form-control");
+        aJSONm.classList.add("btn-lg");
+        aJSONm.classList.add("my-2");
+        aJSONm.title = "Descarga los resultados en un archivo JSON de los motifs hallados";
+        aJSONm.innerHTML = "Descargar JSON Motifs";
 
         bttdiv.append(aCSV);
 

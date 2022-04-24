@@ -6,7 +6,7 @@ from .clsGntCode import clsGeneticCode as gc
 from collections import defaultdict
 traductor = gc('')
 
-class basado_indices_sequencial(object):
+class basado_indices_secuencial(object):
 
    def __init__(self, db_sequence = [], min_sup=2, pos = {}, patrones = {}, keys_seqs = [], debug = False, debugTime = False, csv = False, inputType = '', inputName = '', initDateTime=0, finDateTime=0):
       self.db_sequence = db_sequence
@@ -382,12 +382,19 @@ class basado_indices_sequencial(object):
       r_value = defaultdict(dict)
       r_values = defaultdict(list)
       pass
-
+   
+   #funcion dedica para traducir los patrones frecuentes de ADN a Aminoacidos
    def traductorCodon(self, codon):
       global traductor
       if len(codon) > 2:
-         traductor.setCodon(codon)
-         return traductor.getCodonCoded()
+         tra = ''  # traduccion final
+         recorridos = int(round(len(codon)/3, 1))
+         
+         for i in range(recorridos):
+            traductor.setCodon(codon[i*3:(i+1)*3])
+            tra += traductor.getCodonCoded()
+            
+         return tra
       else:
          return ''
       

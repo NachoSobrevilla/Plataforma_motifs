@@ -10,10 +10,11 @@ EXP_FOLDER = join(dirname(realpath(__file__)), 'experimentos')
 # se podran configurar el crecimiento para alcanzar cierta longitud? actual es de 6 
 # se podran configurar las tolerancias? actual de dos por lado 
 class Alineador(object):
-    def __init__(self, secuencia = '', tolerancia_delante = 0, tolerancia_atras = 0, json_patrones = ""):
+    def __init__(self, secuencia = '', tolerancia_delante = 2, tolerancia_atras = 2, longitud_minina_cre=6, json_patrones = ""):
         self.secuencia = secuencia
         self.tolerancia_delante = tolerancia_delante
         self.tolerancia_atras = tolerancia_atras
+        self.longitud_minina_cre = longitud_minina_cre
         self.json_patrones =  json_patrones
         self.alineamientos = []
         self.motifs = []
@@ -39,7 +40,7 @@ class Alineador(object):
         muestras = ""
         muestras = f"Informacion\n Tolerancia hacia delante: {self.tolerancia_delante}\n Tolerancia hacia atras: {self.tolerancia_atras}\n\n"
         for i in tqdm(range(len(alineamientos))):
-            pd_conteos, motif = self.obtener_motif(alineamientos[i])
+            df_conteos, motif = self.obtener_motif(alineamientos[i])
             
             
             
@@ -94,7 +95,7 @@ class Alineador(object):
             
             muestras += muestra+"\n"+("-"*30)+"\n\n" 
             muestras += "motif obtenido: \t"+motif+"\n\n"
-            muestras += str(pd_conteos) + "\n\n\n\n"
+            muestras += str(df_conteos) + "\n\n\n\n"
             # print(muestras)
             
         try:
@@ -104,11 +105,11 @@ class Alineador(object):
         except Exception as e:
             print(str(e))
             
-    def muestra_resultados_json(self, alineamientos =[], posiciones_align=[], patrones=[]):
+    def muestra_resultados_json(self, alineamientos =[], posiciones_align=[], patrones=[], aminoacidos = []):
         dict_json ={}
         list_info =[]
-        for i in range(len(patrones)):
-            pd_conteos, motif = self.obtener_motif(
+        for i in tqdm(range(len(patrones))):
+            df_conteos, df_info, motif, exp_reg = self.obtener_motif(
                 alineamientos[i], patrones[i])
             if motif != "":
                 list_info.append({
@@ -116,8 +117,13 @@ class Alineador(object):
                     "alineamientos": [{"alineamiento": alineamiento,
                                     "posicion": posicion }  
                                     for alineamiento, posicion in zip(alineamientos[i], posiciones_align[i])],
-                    "matriz_conteo": json.loads(pd_conteos.to_json(orient="index")) ,
-                    "motif": motif           
+                    "matriz_conteo": json.loads(df_conteos.to_json(orient="index")),
+                    "matriz_info": json.loads(df_info.to_json(orient="index")),
+                    "motif": motif,
+                    "longitud_motif": len(motif),
+                    "expresion_regular": exp_reg, 
+                    "ocurrencias_patron": len(alineamientos[i]), 
+                    "traduccion_aminoacido": aminoacidos[i]
                 })
 
         dict_json["Alineaciones"] = list_info
@@ -129,6 +135,7 @@ class Alineador(object):
         
         def archivo_excel(excel_write=xlsxwriter.Workbook()):
             items = 0
+            print("Excel")
             #La intencion de ponerlo en un while es para evitar que toda la informacion se ponga en una sola hoja,
             #para eso se recorrera por partes la lista se fuese necesario, el limite por el momento es 100000 filas
             #y se repartira la infromacion en en diferentes
@@ -148,8 +155,14 @@ class Alineador(object):
                     j += 1 
                     paper.write(row, col, "Patron")
                     paper.write(row, col+j, list_info_motifs[itm]["patron"])
+                    paper.write(row+1, col, "Motif")
+                    paper.write(row+1, col+j, list_info_motifs[itm]["motif"])
+                    paper.write(row+2, col, "Expresion regular")
+                    paper.write(row+2, col+j, list_info_motifs[itm]["expresion_regular"])
+                    paper.write(row+3, col, "Longitud motif")
+                    paper.write(row+3, col+j, list_info_motifs[itm]["longitud_motif"])
                     #Despues el alineamiento: posicion y secuencia de se alineo
-                    i += 2
+                    i += 5
                     paper.write(row+i, col+j, "Alineamiento")
                     i += 1
                     paper.write(row+i, col+j, "posicion")
@@ -161,7 +174,7 @@ class Alineador(object):
                         paper.write(row+i, col+j+1, str(pos["alineamiento"]))
 
                     #recolocacion de posciones
-                    i = 2
+                    i = 5
                     j = 5
                     #Se escribe la matriz de conteo 
                     matriz_conteo = list_info_motifs[itm]["matriz_conteo"]#Se toma la lista de diccionarios, donde las llaves principales son el numero de fila y los items son diccionarios con la llave de nucleotido y el valor es la frecuencia del nucleotido
@@ -187,20 +200,48 @@ class Alineador(object):
                             elif key == "G":
                                 paper.write(row+i, col+j+4, value)
                         
-
+                    #recolocacion de posciones
+                    i = 5
+                    j = 12 #se recorren hasta la columna 14
+                    # Se toma la lista de diccionarios, donde las llaves principales son el numero de fila y los items son diccionarios con la llave de nucleotido y el valor es la frecuencia del nucleotido
+                    matriz_info = list_info_motifs[itm]["matriz_info"]
+                    #Se escribe la cabecera
+                    paper.write(row+i, col+j, "Matriz de informacion")
+                    i += 1
+                    paper.write(row+i, col+j, "Posición")
+                    paper.write(row+i, col+j+1, "A")
+                    paper.write(row+i, col+j+2, "C")
+                    paper.write(row+i, col+j+3, "T")
+                    paper.write(row+i, col+j+4, "G")
+                    #Ciclo para escribir los valores de la matriz
+                    for k in range(len(matriz_info)):
+                        i += 1
+                        paper.write(row+i, col+j, str(k))
+                        # Cada valor se escribe en la posicion que le corresponda
+                        for key, value in matriz_info[str(k)].items():
+                            if key == "A":
+                                paper.write(row+i, col+j+1, value)
+                            elif key == "C":
+                                paper.write(row+i, col+j+2, value)
+                            elif key == "T":
+                                paper.write(row+i, col+j+3, value)
+                            elif key == "G":
+                                paper.write(row+i, col+j+4, value)
                     
-                    j = 14 #se recorren hasta la columna 14
+                    
+                    i = 5
+                    j = 19 #se recorren hasta la columna 19
+                    
                     #se inserta la imagen al 50% de si proporcion 
                     paper.insert_image(row+2, col+j, filenamepng, {'x_scale': 0.5, 'y_scale': 0.5})
                     #por ultimo se escribe el motif
-                    paper.write(row+i+2, col, "motif")
-                    paper.write(row+i+2, col+1, list_info_motifs[itm]["motif"])
+                    
                     if itm == len(motifs_json['Alineaciones'])-1:
                         paper.write(row+i+3, col, "Numero de alineaciones")
                         paper.write(row+i+3, col+1,
                                     motifs_json["Num_alineaciones"])
                     #se suma la longitud de la matriz de conteo mas 10 para escribir los nuevos datos
-                    row += len(matriz_conteo) + 10
+                    row += len(list_info_motifs[itm]["alineamientos"]) + len(matriz_conteo) +10
                     col = 0
                     i = 0
                     j = 0
@@ -283,9 +324,8 @@ class Alineador(object):
     
     def obtener_motif(self,alineamiento = [""], patron=""):
         g = Graficador(alineamiento)
-        
-        pd_conteos, motif = g.ploteo_logo_seq_align(g.get_list_align_plt(), patron) 
-        return pd_conteos, motif      
+        df_conteos, df_info, motif, exp_reg= g.ploteo_logo_seq_align(patron) 
+        return df_conteos, df_info, motif, exp_reg      
     
                     
     def extraccion_json(self):
@@ -313,10 +353,12 @@ class Alineador(object):
 
             for p in lista_posiciones:  # por cada posicion
                 # si la longitud del patron es menor a 6 y la posicion mas 6 no arrebasa la longitud de la secuencia
-                if len(patron_evaluar) < 6 and p+6 < len(self.secuencia)-1:
+                if len(patron_evaluar) < self.longitud_minina_cre and p+self.longitud_minina_cre < len(self.secuencia)-1:
                     # Se le agregan otras seis posiciones
-                    patron_evaluar = self.secuencia[p:p+6]
-                elif p+6 >= len(self.secuencia)-1 and len(patron_evaluar) < 6: # si la longitud es menor a  6 pero la(s) posiciones 
+                    patron_evaluar = self.secuencia[p:p +
+                                                    self.longitud_minina_cre]
+                # si la longitud es menor a  6 pero la(s) posiciones
+                elif p+self.longitud_minina_cre >= len(self.secuencia)-1 and len(patron_evaluar) < self.longitud_minina_cre:
                     pos_delante = 0
                     ban = False
                     brk_menor_seis = False
@@ -385,12 +427,12 @@ class Alineador(object):
                 alineamiento = pre_ali[k] # se toma el patron alineado compuesto
                 pos_align = lista_posiciones[k] # se toma la posicion actual
                 # Si es menor a 6, se le acompletara con las letras detras del patron hasta llegar a 6
-                if pos_align-(6-len(alineamiento)) > 0 and len(alineamiento) < 6:
-                    pos_align = pos_align-(6-len(alineamiento))
+                if pos_align-(self.longitud_minina_cre-len(alineamiento)) > 0 and len(alineamiento) < self.longitud_minina_cre:
+                    pos_align = pos_align-(self.longitud_minina_cre-len(alineamiento))
                     alineamiento = self.secuencia[pos_align:lista_posiciones[k]] + str(alineamiento)
                 
                 #Si la posicion menos las pociones hacia atras que necesite el patron/secuencia alineada para llegar a una longitud de 6 y si el mismo patron/secuencia es menor a seis
-                elif pos_align-(6-len(alineamiento)) <= 0 and len(alineamiento) < 6:
+                elif pos_align-(self.longitud_minina_cre-len(alineamiento)) <= 0 and len(alineamiento) < self.longitud_minina_cre:
                     #Se rompe el ciclo
                     pos_atras = 0
                     brk_menor_seis = False
@@ -457,7 +499,8 @@ class Alineador(object):
         alineamiento_retorno = []
         list_posiciones = []
         list_patrones=[]
-        
+        list_animoacidos=[]
+        print("inicio")
         for info_patron in tqdm(patrones["Patrones"]):
             pre_ali = [] #Captura al principio las primeras alineaciones hacia delante (posiciones)
             # rec_ali = [] #guarda las posciones de pre ali  
@@ -472,29 +515,33 @@ class Alineador(object):
                 aux, new_posiciones = self.adiccion_atras_patron(rec_ali, posiciones)
 
                 if len(aux) == len(rec_ali) and len(new_posiciones) == len(posiciones): # Si la longitud de rec_ali es igual a aux
-                    if ((len(aux[0]) >= 6) or (len(aux[0]) % 3 == 0)): # el patron alineado es mayor a 6 nucleotidos or es un multiplo de 3 
+                    if ((len(aux[0]) >= self.longitud_minina_cre) or (len(aux[0]) % 3 == 0)): # el patron alineado es mayor a 6 nucleotidos or es un multiplo de 3 
                         #Puse el or len para admitir mas patrones pero creo que se va a cambiar
                         alineamiento_retorno.append( aux[:] )
                         list_posiciones.append(new_posiciones)
                         list_patrones.append(info_patron["Patron"])
+                        list_animoacidos.append(info_patron["Traduccion_aminoacido"])
                         #se "guardan" las las alieneaciones completas (frontal y posterior) junto con
                         #las nuevas posicoines
                     
                 else:
-                    if ((len(rec_ali[0]) >= 6) or (len(rec_ali[0]) % 3 == 0)):
+                    if ((len(rec_ali[0]) >= self.longitud_minina_cre) or (len(rec_ali[0]) % 3 == 0)):
                         alineamiento_retorno.append(rec_ali[:])
                         list_posiciones.append(posiciones)
                         list_patrones.append(info_patron["Patron"])
+                        list_animoacidos.append(info_patron["Traduccion_aminoacido"])
                         #se "guardan" las las alieneaciones con modificacion hacia delante junto con
                         #las posiciones originales
 
                           
             else:
                 #
-                if ((len(info_patron["Patron"]) >= 6) or (len(info_patron["Patron"]) % 3 == 0)):
+                if ((len(info_patron["Patron"]) >= self.longitud_minina_cre) or (len(info_patron["Patron"]) % 3 == 0)):
                     alineamiento_retorno.append(info_patron["Patron"])
                     list_posiciones.append(posiciones)
                     list_patrones.append(info_patron["Patron"])
+                    list_animoacidos.append(
+                        info_patron["Traduccion_aminoacido"])
                     #se "guardan" los patrones originales junto con
                     #las nuevas posiciones
             
@@ -503,8 +550,9 @@ class Alineador(object):
             rec_ali.clear()
             
         # self.muestra_resultados_txt(alineamiento_retorno, list_posiciones, list_patrones)
-        json_resultados = self.muestra_resultados_json(alineamiento_retorno, list_posiciones, list_patrones)
+        json_resultados = self.muestra_resultados_json(alineamiento_retorno, list_posiciones, list_patrones, list_animoacidos)
         self.generador_archivos(json_resultados,**patrones["Configuracion"])
+        return json_resultados
             #           p  
                 # pre_ali = [ptr+self.secuencia[p+len(ptr)] if (p+len(ptr)<=len(self.secuencia)-1) else ban=False for ptr in pre_ali for p in posiciones ]
         

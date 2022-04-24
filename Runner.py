@@ -21,6 +21,7 @@ import Alineador_Patornes, Alineador_Patornes_multi
 x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\Secuencias ADN\\"
 y = "sequence_citrus_8_150M.fasta"#"test_sequence.fasta"   
 z = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\"
+z1 = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\motifs\\"
 # x1 = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud similar\\"
 x1 = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud diferente\\"
 y1 = "sequence_XM_011544263.fasta"
@@ -54,7 +55,7 @@ def read_file():
 def find_n_patterns_bims():
     '''Funcion para probar bims con diferentes archivos'''
     archivos = glob.glob(os.path.join(
-        z, "adicional multi"+os.path.sep)+'*.fasta')
+        z1, "multi"+os.path.sep)+'*.fasta')
     i = 0
     for archivo in tqdm(archivos):
         d1 = datetime.now()
@@ -65,7 +66,7 @@ def find_n_patterns_bims():
         pdt = datetime.now()
         print("iniciando analisis")
         
-        pf = BI_n_sequences_copy.basado_indices_sequencial(db_sequence=list_sequences, min_sup=5, keys_seqs=keys_seq ,inputType='archivo', inputName=y)
+        pf = BI_n_sequences_copy.basado_indices_secuencial(db_sequence=list_sequences, min_sup=5, keys_seqs=keys_seq ,inputType='archivo', inputName=y)
         pf.set_initDateTime(pdt)
         tqdm(pf.set_pos(pf.find_pos()))
         tqdm(pf.run())
@@ -85,7 +86,7 @@ def find_n_patterns_bims():
         
         print("analisis finalizado")
         try:
-            with open("secuencie"+str(len(keys_seq))+str(i)+'-BIMS-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+            with open(z1+"multi"+os.path.sep+"secuencies"+str(len(keys_seq))+str(i)+'-BIMS-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
                 json.dump(pf.info_patrones(), file_object_json, sort_keys=True, indent=4)
                 
         except FileError as e:                
@@ -99,7 +100,7 @@ def find_n_patterns_bims():
             
         # print('Duración: ', d2-d1)
         df = pd.json_normalize({
-            "Nombre_archivo: ": y,
+            "Nombre_archivo: ": archivo,
             "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
             "Num Aprox de bp: ": os.path.getsize(x+y),
             'Algoritmo': '(PA)+BIMS+Alineador',
@@ -173,7 +174,7 @@ def find_n_patterns_gsp():
 
         # print('Duración: ', d2-d1)
         df = pd.json_normalize({
-            "Nombre_archivo: ": y,
+            "Nombre_archivo: ": archivo, #y
             "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
             "Num Aprox de bp: ": os.path.getsize(x+y),
             'Algoritmo': '(PA)+GSP+alineador',
@@ -197,9 +198,10 @@ def find_n_patterns_gsp():
 
 def find_patterns_bi():
     '''Funcion para probar bims con diferentes archivos'''
-    archivos = glob.glob(os.path.join(z, "adicional"+os.path.sep)+'*.fasta')
+    archivos = glob.glob(os.path.join(z1,"una"+os.path.sep)+'*.fasta')
+    # archivo = os.path.join(x1, "sequence_NM_007169.fasta")
     i = 0
-    print(archivos)
+    # print(archivos)
     for archivo in tqdm(archivos):
         d1 = datetime.now()
         print("leyendo archivos")      
@@ -210,7 +212,7 @@ def find_patterns_bi():
         print("iniciando analisis")
         pf = BI_copy.basado_indices(
             s=list_sequences[0], min_sup=2, keys_seqs=keys_seq, inputType='archivo', inputName=""+str(i))
-        # pf = BI_n_sequences_copy.basado_indices_sequencial(db_sequence=list_sequences, min_sup=5, keys_seqs=keys_seq ,inputType='archivo', inputName=y)
+        # pf = BI_n_sequences_copy.basado_indices_secuencial(db_sequence=list_sequences, min_sup=5, keys_seqs=keys_seq ,inputType='archivo', inputName=y)
         pf.set_initDateTime(pdt)
         tqdm(pf.set_pos(pf.find_pos()))
         tqdm(pf.run())
@@ -230,7 +232,7 @@ def find_patterns_bi():
 
         print("analisis finalizado")
         try:
-            with open(z+"sequences_"+str(keys_seq)+str(i)+'-BI-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+            with open(z1+"una"+os.path.sep+"sequences_"+str(keys_seq)+str(i)+'-BI-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
                 json.dump(dataBi, file_object_json, sort_keys=True, indent=4)
                 
         except FileError as e:                
@@ -242,7 +244,7 @@ def find_patterns_bi():
         d2 = datetime.now()
         # print('Duración: ', d2-d1)
         df = pd.json_normalize({
-            "Nombre_archivo: ": "sequence_experimental_1_1000_"+str(i),
+            "Nombre_archivo: ": archivo, #"sequence_experimental_1_1000_"+str(i),
             "Peso_archivo (MB): ": (os.path.getsize(x1+y1)/1000000),
             "Num Aprox de bp: ": os.path.getsize(x1+y1),
             'Algoritmo': '(PA)+BI+alineador',
@@ -273,7 +275,7 @@ def bims_stand_alone():
                 'CTAAGTCCGTAGCCGACT',]
     min_sup = 2
 
-    bi = BI_n_sequences_copy.basado_indices_sequencial(
+    bi = BI_n_sequences_copy.basado_indices_secuencial(
         db_sequence=sequence, min_sup=min_sup, debug=True)
     bi.set_pos(bi.find_pos())
     bi.run()
@@ -286,9 +288,9 @@ def bims_stand_alone():
     
 
 if __name__ == '__main__':
-    find_patterns_bi()
-    #find_n_patterns_bims()
-    # find_n_patterns_gsp()
+    # find_patterns_bi()
+    find_n_patterns_bims()
+    #find_n_patterns_gsp()
 
 
 
@@ -318,7 +320,7 @@ if __name__ == '__main__':
 
 # sequence = []
 # min_sup = 3
-# b = BI_n_sequences_copy.basado_indices_sequencial(db_sequence=sequence, min_sup=3, debug=True, csv=True)
+# b = BI_n_sequences_copy.basado_indices_secuencial(db_sequence=sequence, min_sup=3, debug=True, csv=True)
 # b.run()
 # # json_result = json.loads(json.dumps(b.info_patrones()))
 # # df = pd.json_normalize(json_result)
