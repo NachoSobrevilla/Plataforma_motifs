@@ -1,5 +1,5 @@
 from io import FileIO
-
+from tqdm import tqdm
 
 
 class Reader():
@@ -44,7 +44,7 @@ class Reader():
         headlines = []
         keys=[]
         sequence_line = ''
-        for line in lines:
+        for line in tqdm(lines):
             if line != '\n':
                 if line[0] != '>':
                     sequence_line += line.replace('\n','')

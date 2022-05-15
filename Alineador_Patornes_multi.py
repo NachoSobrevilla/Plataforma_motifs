@@ -13,7 +13,7 @@ from tqdm import tqdm
 EXP_FOLDER = join(dirname(realpath(__file__)), 'experimentos')
 
 class Alineador_multi(object):
-    def __init__(self, secuencias = {}, tolerancia_delante = 2, tolerancia_atras = 2, longitud_minima_cre = 6, json_patrones = ""):
+    def __init__(self, secuencias = {}, tolerancia_delante = 2, tolerancia_atras = 2, longitud_minima_cre = 6, json_patrones = "", imprimir_logo = False):
         self.secuencias = secuencias
         self.tolerancia_delante = tolerancia_delante
         self.tolerancia_atras = tolerancia_atras
@@ -21,6 +21,7 @@ class Alineador_multi(object):
         self.json_patrones =  json_patrones
         self.alineamientos = []
         self.motifs = []
+        self.imprimir_logo = imprimir_logo
     
     def clear(self):
         self.secuencias = ''
@@ -38,18 +39,26 @@ class Alineador_multi(object):
             
               
     def muestra_resultados_json(self, alineamientos =[], posiciones_align=[], patrones=[], aminoacidos = []):
+        
+        # def buscar_motif_existente(motif = "", posiciones_esp = {}):
+        #     return next((i for i, x in enumerate(list_info) if x["motif"] == motif and {j["secuencia"]: [k["posicion"] for k in x["alineamientos"] if j["secuencia"] == k["secuencia"] ] for j in x["alineamientos"]} == posiciones_esp), -1)
+
         dict_json ={}
         list_info =[]
+        
         for i in tqdm(range(len(patrones))):
             x = []
             for s in alineamientos[i].values():
-                x += s 
-                
+                x += s     
             # print(x)
             # print(type(alineamientos[i]))
-            df_conteos, df_info ,motif, exp_reg = self.obtener_motif( x, patrones[i])
             
+            df_conteos, df_info ,motif, exp_reg = self.obtener_motif(x, patrones[i])
+            # print(patrones[i])
             if motif != "":
+                # existsPos = buscar_motif_existente(motif, posiciones_align[i])
+                # print(motif)
+                # if existsPos == -1:
                 list_info.append({
                     "patron":patrones[i],
                     "alineamientos": [{"secuencia": x1,
@@ -68,6 +77,9 @@ class Alineador_multi(object):
                     "traduccion_aminoacido": aminoacidos[i]
                     
                 })
+                # else:
+                #     list_info[existsPos]["patron"] = patrones[i]
+                #     list_info[existsPos]["traduccion_aminoacido"] = aminoacidos[i]
 
 
             
@@ -244,10 +256,7 @@ class Alineador_multi(object):
             """.format(contenido = content_principal)
 
             return principal
-                  
-                
-            
-        
+                    
         def archivo_excel(excel_writer=xlsxwriter.Workbook()):
             items = 0
             #La intencion de ponerlo en un while es para evitar que toda la informacion se ponga en una sola hoja,
@@ -353,20 +362,23 @@ class Alineador_multi(object):
                             elif key == "G":
                                 paper.write(row+i, col+j+4, value)
 
-                    i = 5
-                    j = 19  # se recorren hasta la columna 19
+                    if self.imprimir_logo == True:
+                        i = 5
+                        j = 19  # se recorren hasta la columna 19
+                        
+                        #se inserta la imagen al 50% de si proporcion
+                        paper.insert_image(
+                            row+2, col+j, filenamepng, {'x_scale': 0.5, 'y_scale': 0.5})
+                        #por ultimo se escribe el motif
                     
-                    #se inserta la imagen al 50% de si proporcion
-                    paper.insert_image(
-                        row+2, col+j, filenamepng, {'x_scale': 0.5, 'y_scale': 0.5})
-                    #por ultimo se escribe el motif
+                    #se suma la longitud de la matriz de conteo mas 10 para escribir los nuevos datos
+                    row += len(list_info_motifs[itm]["alineamientos"]) + len(matriz_conteo) +10
+                    col = 0
                     
                     if itm == len(motifs_json['Alineaciones'])-1:
                         paper.write(row+i+3, col, "Numero de alineaciones")
                         paper.write(row+i+3, col+1, motifs_json["Num_alineaciones"])
-                    #se suma la longitud de la matriz de conteo mas 10 para escribir los nuevos datos
-                    row += len(list_info_motifs[itm]["alineamientos"]) + 14
-                    col = 0
+
                     i = 0
                     j = 0
                     
@@ -389,7 +401,7 @@ class Alineador_multi(object):
         x += "EXP_"+str(kargs['Siglas']) + '_' +\
             str(kargs['Min_sup']) + '_' + \
             str(kargs['Tipo_Entrada']) + '_' + \
-            str(kargs['Entrada']).split(".fasta")[0] + '_' + \
+            str(kargs['Entrada']).replace(".fasta","") + '_' + \
             str(kargs['Num_Sequencias_ananlizadas']) + '_' + \
             str(kargs['Num_Patrones_hallados']) + '_'
 
@@ -558,17 +570,18 @@ class Alineador_multi(object):
             
             for pos in dict_posiciones: #info_patron["Posiciones"]:
                 # patron_evaluar = patron_original
+                
                 #Si la longitud del patron es menos a 6
-                if len(patron_evaluar) < self.longitud_minina_cre and (pos["posicion"]-1)+self.longitud_minina_cre < len(self.secuencias[pos["sequencia"]])-1:
-                    # Se le agregan otras seis posiciones
-                    patron_evaluar = self.secuencias[pos["sequencia"]][(pos["posicion"]-1):(pos["posicion"]-1)+self.longitud_minina_cre]
-                # si la longitud es menor a  6 pero la(s) posiciones
-                elif (pos["posicion"]-1)+self.longitud_minina_cre >= len(self.secuencias[pos["sequencia"]])-1 and len(patron_evaluar) < self.longitud_minina_cre:
-                    #Sino se rompe el ciclo
-                    pos_delante = 0
-                    ban = False
-                    brk_menor_seis = False
-                    break
+                # if len(patron_evaluar) < self.longitud_minina_cre and (pos["posicion"]-1)+self.longitud_minina_cre < len(self.secuencias[pos["sequencia"]])-1:
+                #     # Se le agregan otras seis posiciones
+                #     patron_evaluar = self.secuencias[pos["sequencia"]][(pos["posicion"]-1):(pos["posicion"]-1)+self.longitud_minina_cre]
+                # # si la longitud es menor a  6 pero la(s) posiciones
+                # elif (pos["posicion"]-1)+self.longitud_minina_cre >= len(self.secuencias[pos["sequencia"]])-1 and len(patron_evaluar) < self.longitud_minina_cre:
+                #     #Sino se rompe el ciclo
+                #     pos_delante = 0
+                #     ban = False
+                #     brk_menor_seis = False
+                #     break
                 
                 # si la posicion no sobrepasa a longitud de la secuencia
                 if i+(pos["posicion"]-1)+len(patron_evaluar) <= len(self.secuencias[pos["sequencia"]])-1:
@@ -660,6 +673,8 @@ class Alineador_multi(object):
             if ban == False:
                 ban = True
                 pos_delante -= 1
+            else: #incremento si encuenta algun patorn    
+                pos_delante = self.tolerancia_delante
             
             if brk_menor_seis == False: #si es menor a seis
                 #mandamos 
@@ -700,20 +715,21 @@ class Alineador_multi(object):
                 for k in range(len(pos)):  # se recorre la lista en base a si index
                     alineamiento = pre_ali[key][k] # se toma el patron alineado compuesto
                     pos_align = pos[k]
+                    #Crecimiento para igual la longitud minima
                     #Si la posicion menos las pociones hacia atras que necesite el patron/secuencia alineada para llegar a una longitud de 6 y si el mismo patron/secuencia es menor a seis 
-                    if pos_align-(self.longitud_minina_cre-len(alineamiento)) > 0 and len(alineamiento) < self.longitud_minina_cre:
-                        # Si es menor a 6, se le acompletara con las letras detras del patron hasta llegar a 6
-                        # Primero toma la posicion modificada
-                        pos_align = pos[k] - \
-                            (self.longitud_minina_cre-len(alineamiento))
-                        alineamiento = self.secuencias[key][pos_align:pos[k]] + str(alineamiento) # y despues el nuevo alineamiento
+                    # if pos_align-(self.longitud_minina_cre-len(alineamiento)) > 0 and len(alineamiento) < self.longitud_minina_cre:
+                    #     # Si es menor a 6, se le acompletara con las letras detras del patron hasta llegar a 6
+                    #     # Primero toma la posicion modificada
+                    #     pos_align = pos[k] - \
+                    #         (self.longitud_minina_cre-len(alineamiento))
+                    #     alineamiento = self.secuencias[key][pos_align:pos[k]] + str(alineamiento) # y despues el nuevo alineamiento
                         
                         
-                    #Si la posicion menos las pociones hacia atras que necesite el patron/secuencia alineada para llegar a una longitud de 6 y si el mismo patron/secuencia es menor a seis
-                    elif pos_align-(self.longitud_minina_cre-len(alineamiento)) <= 0 and len(alineamiento) < self.longitud_minina_cre:
-                        pos_atras = 0
-                        brk_menor_seis = False
-                        break 
+                    # #Si la posicion menos las pociones hacia atras que necesite el patron/secuencia alineada para llegar a una longitud de 6 y si el mismo patron/secuencia es menor a seis
+                    # elif pos_align-(self.longitud_minina_cre-len(alineamiento)) <= 0 and len(alineamiento) < self.longitud_minina_cre:
+                    #     pos_atras = 0
+                    #     brk_menor_seis = False
+                    #     break 
                     
                     if (pos_align-i >= 0):  # Si la posicion menos el indicador sea mayores a 0    
                         if i == 1:  # si es igual a 0
@@ -795,6 +811,7 @@ class Alineador_multi(object):
                         ban_brk = False  # booleano para rompper el ciclo while
                         break
                     
+                    
                 if brk_menor_seis == False:  # si el patron es menor a 6
                     break
 
@@ -811,6 +828,8 @@ class Alineador_multi(object):
             if ban == False:  # si ban es False
                 ban = True #Ban a su estado original
                 pos_atras -= 1  # pos_atras menos unos
+            else:
+                pos_atras = self.tolerancia_atras
 
             if brk_menor_seis == False:  # si el patron es menor a 6
                 #se mandan las mismas posiciones y alineaciones de entrada
@@ -845,6 +864,10 @@ class Alineador_multi(object):
         list_animoacidos = [] #lista de los aninoaciodos
         list_patrones=[] #Para la lista de patrones
         
+        def comprobar_lugar_alineaciones(posiciones_actuales):
+            return next((i for i, x in enumerate(list_posiciones) if x == posiciones_actuales),  -1 )
+            #     return next((i for i, x in enumerate(list_info) if x["motif"] == motif and {j["secuencia"]: [k["posicion"] for k in x["alineamientos"] if j["secuencia"] == k["secuencia"] ] for j in x["alineamientos"]} == posiciones_esp), -1)
+        
         for info_patron in tqdm(patrones["Patrones"]):
             rec_ali = {} #Record  de los alineamientos
             # posiciones = {p["sequencia"]: [p["posicion"]] if p["sequencia"] is posiciones else p["sequencia"].append(p["posicion"]) for p in info_patron["Posiciones"]}  # [p["posicion"]-1 for p in info_patron["Posiciones"]]
@@ -865,31 +888,56 @@ class Alineador_multi(object):
                     # el patron alineado es mayor a 6 nucleotidos or es un multiplo de 3
                     # or (len(list(aux.values())[0][0]) % 3 == 0):
                     if(len(list(aux.values())[0][0]) >= self.longitud_minina_cre):
-                        alineamiento_retorno.append(aux.copy()) #Agregalo a la lista grande
-                        list_posiciones.append(new_posiciones.copy()) #se agrega la que tiene las posiones que retrocediron
-                        list_patrones.append(info_patron["Patron"]) #Agrega al patron
-                        list_animoacidos.append(info_patron["Traduccion_aminoacido"])
-                    
+                        cla = comprobar_lugar_alineaciones(new_posiciones) #Se compueban las alineaciones para evitar redundancia en las posiciones y por ende los patrones
+                        #para ello cla indicara el lugar de la redundancia
+                        if cla == -1: #si no existen esas posiciones 
+                            alineamiento_retorno.append(aux.copy()) #Agregalo a la lista grande
+                            list_posiciones.append(new_posiciones.copy()) #se agrega la que tiene las posiones que retrocediron
+                            list_patrones.append(info_patron["Patron"]) #Agrega al patron
+                            list_animoacidos.append(info_patron["Traduccion_aminoacido"])
+                        else: #en caso contrario 
+                            #Se reemplaza el patron con su respectivo traduccion
+                            list_patrones[cla] = info_patron["Patron"]
+                            list_animoacidos[cla] = info_patron["Traduccion_aminoacido"]
+                
                 else: #sino
                     # print(pre_ali.copy()) #imprime lo resultante de enfrente                                    if((aux.get.values()[0][0]) >= 6) or ((aux.get.values()) % 3 == 0):
                     # or (len(list(rec_ali.values()[0][0])) % 3 == 0):
                     if(len(list(rec_ali.values()[0][0])) >= self.longitud_minina_cre):
-                        alineamiento_retorno.append(rec_ali.copy()) #copialo a la lista grande
-                        #quedate con las posiciones originales
-                        list_posiciones.append(posiciones) 
-                        # Agrega al patron
-                        list_patrones.append(info_patron["Patron"])
-                        list_animoacidos.append(
-                            info_patron["Traduccion_aminoacido"])
+                        # Se compueban las alineaciones para evitar redundancia en las posiciones y por ende los patrones
+                        cla = comprobar_lugar_alineaciones(posiciones)#Se compueban las alineaciones para evitar redundancia en las posiciones y por ende los patrones
+                        #para ello cla indicara el lugar de la redundancia
+                        if cla == -1: #si no existen esas posiciones 
+                            alineamiento_retorno.append(rec_ali.copy()) #copialo a la lista grande
+                            #quedate con las posiciones originales
+                            list_posiciones.append(posiciones) 
+                            # Agrega al patron
+                            list_patrones.append(info_patron["Patron"])
+                            list_animoacidos.append(info_patron["Traduccion_aminoacido"])
+                        else: #en caso contrario 
+                            #Se reemplaza el patron con su respectivo traduccion
+                            list_patrones[cla] = info_patron["Patron"]
+                            list_animoacidos[cla] = info_patron["Traduccion_aminoacido"]
+                            
                            
             else:  # Si la longitud de rec_ali no fue igual de las posiciones
                 #Se toma el patron tal cual junto con las posiciones actuales
                 # or (len(info_patron["Patron"]) % 3 == 0)):
                 if (len(info_patron["Patron"]) >= self.longitud_minina_cre):
-                    alineamiento_retorno.append(info_patron["Patron"])
-                    list_posiciones.append(posiciones)
-                    list_patrones.append(info_patron["Patron"])# Agrega al patron
-                    list_animoacidos.append(info_patron["Traduccion_aminoacido"])
+                    # Se compueban las alineaciones para evitar redundancia en las posiciones y por ende los patrones
+                    cla = comprobar_lugar_alineaciones(posiciones)
+                    #para ello cla indicara el lugar de la redundancia
+                    if cla == -1: #si no existen esas posiciones 
+                        alineamiento_retorno.append(info_patron["Patron"])
+                        list_posiciones.append(posiciones)
+                        list_patrones.append(info_patron["Patron"])# Agrega al patron
+                        list_animoacidos.append(info_patron["Traduccion_aminoacido"])
+                else:
+                    #en caso contrario 
+                    #Se reemplaza el patron con su respectivo traduccion
+                    list_patrones[cla] = info_patron["Patron"]
+                    list_animoacidos[cla] = info_patron["Traduccion_aminoacido"]
+                            
             
             
             rec_ali.clear()
@@ -907,11 +955,20 @@ class Alineador_multi(object):
                 # pre_ali = [ptr+self.secuencias[p+len(ptr)] if (p+len(ptr)<=len(self.secuencias)-1) else ban=False for ptr in pre_ali for p in posiciones ]
         
 # if __name__ == '__main__':
-    # x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud diferente\\"
-    # x = "C:\\Users\\sobre\\Desktop\\"
-    # y = {"000000": "ACGTGTAAAACTCTTGTT",
-    #      "000001": "CTAAGTCCGTAGCCGACT", 
-    #      "000002": "GGATCCAATCGCTAATCG"}
-    # z = "exp-000000-000001-000002_14_12_2021_0_21_33.json"
-    # align = Alineador_multi(secuencias=y, tolerancia_atras=2, tolerancia_delante=2, json_patrones= os.path.join(x, z))
-    # align.alineador_multi()
+#     # x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud diferente\\"
+#     #x = "C:\\Users\\sobre\\Desktop\\"
+#     x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\motifs\\multi\\json\\"
+#     y = {"MN273335.1": "ACCCCCGTCCCGGGATCAGAGTCACGTACGGTTATCATATGGACCATTGGATCAAAAGGACACGTGTTCGATCAGGATCTGTGATTCGTTCAACGAATCTGACGGAAGATCGTACACTTTATGCTTTTACGCGTGGCAAGCTGTTATTGGTTCTTTAAGGCGTCGTTGCTTTTTTCACGCGTTTTCTTTTTGCGCCGTTGTTTTGGCAGCTGGAAAGCATATGCTTTCCTTAGCTGTTAAGTATTTTTTTTTGTGGTGTGCATACGAAGCTTCGTTTGAGTTTGCCTATAAATAACAGTGCATCGTCTTCAACCTCATACACAACCATGGCTGAGTGGTTTTCAAGTCCTGTGAAAACATGTACACATGTTTGTGACTTTCCTTCTCTCTCTTCTTCTTCTACTGAGCAACAAATAAGGTGTTGTGATACTATGAAGGACAAGTTGCAAGATTCAAGGAGGGTGTTGCTCGTAAGTTGCAGTGTCAGCTTCAATGGCAGTTTCTATGGAGGTAATAGGAATGTTCGTGGTCAACTGCAACTATCAATGGAGGAAGACGATGGTGTTCTTAGACCAATTGGATTTATTCCAATTGGAGGTTATTTGTACCATAATGATTATGGGTATTATCAAGGTGAGAAGACATTTAATCTGGATGTGGAGTCTCAATACTTGAAGGCAGATGAAGATTACAACAAACTGTTCGTGGTAAATATTTTGAATGAAAATGGATTAGATGATAGATGTGATTTGAAGGTGTTTGTTGTTCATACACTTAGAATCAAGGTGTAATTAGTACATCAGTGTAATTAATGTTAATTAATGAATATTTATTATTTTAAGTGTTGTTAATGAATATAATTATTGATTGATATTGTTTTTAATAACTCCGCGAAGCGATATGGATCAGCCCAATAGGCCCAATAGTTAATAGGCCCAATATAAATGGGGATCAGCTGACGTCAGCTGATCCCGTGACAGCCTGGGACGGGGCTTAGTATT",
+#          "MN273334.1": "ACCCCCGCCCCAGGATCAGCGGAGTCATCACGTGACTCCCACGTGCTTTGTGCGTGAACTGTAGCGTGTAGGGTCCCACATACGCACTAACTGAACAACGTTGTGAGGACGACGAATACTTCGTCGTGAAGTAAAGTAAACCCACTTCAGTGGGTTTGCTTTATACTTTATTCGTTGTTTGTTGCTTTTGAATGAATGGCTCAGATTGAATCTAAATTAATGCGTACATGGTACGCCTTGTTGTGTGGTGATTATAAATAGCGAGTGGTTCTGAAATTGAATCATCGTCTTCCTCTTCTCACCTGCTTCGTTTGTTTAATTGTTCCATTATAATATTCATTTTAATGGGGGATCAAGGTCAAGGTTATTATGCAGGTTATCAAGCAGACGATGAGGGACAATCATCCAATAATCACCAGGTATTAAATATTATAGGTATAGTATTATTAATAATACTATGTATTAGTGGTATCTGGGTTTGTATTATGTTAGCCTGTTATATACCTGGGTTTGTTAAGAAGACATTAGATGCTTGGTTAAGTTCATCATCAATTATGAAGAGGAGGTTAGCTGCTACTATAACAAGAACACCATATGAAGAAACAGGCCCTGAGAGAGAAAGAAGATGGAGTGCTAGAAGGAATCAAGCTGAAGGAGGTGTTCAAGGGAATAATAATGCTTCTGGGTTTAGTTAGTTAGGTAGTTTGTGTTCTTGTAATTGTCAACATCAGTATGTAATGATTCAAGGAATTAATAAAATATTATTTTATTAATGTGTTGTAGTTGTTTGTTATGTTGTTCTTTGTTGAATAATGTTTATGTGTAAGGAAGACGATGATGAATAATAAGAATATGTTGTTTTTGATTTTAAAACTCCGCGAAGCGGTATGGTTCGGTGTTTGTGTTGACATATATGCCCTTCATTAATGAAGGGGTAATGTCCAAATTACCCCTTGTGACGTCATTTGATCCCGTGCTGAGCTGGGGCGGGGCTTAGTATT",
+#          "MN273324.1": "ACCCCCGTCCCGGGATCAGAGTCACGTACGGTTATCATATGGACCATTGGATCAAAAGGACACGTGTTCGATCAGGATCTGTGATTCGTTCAACGAATCTGACGGAAGATCGTACACTTAATGCTTTTACGCGTGGCAAGCTGTGATTGGTTCTTTAAGGCGACGTTGCTTTTTTCACGCGCTTTCTTTTTGCGCCGTTGTTTTGGCAGCTGGAAAGCATATGCTTTCCTTAGCTGTTAAGTATTTCTTTTTGTGGTGTGCATAGGAAGCTTCGTGTGAGTTTGCCTATAAATAACAGTGCATCGTCTTCAACCTCATACACAACCATGGCTGAGTGGTTTTCAAGTCCTGTGAAAACATGTACACATGTTTGTGACTTTCCTTCTCTCTCTTCTTCTTCTACTGAGCAACAAATAAGGTGTTGTGATACTATGAAGGACAAGTTGCAAGATTCAAGGAGGGTGTTGCTCGTAAGTTGCAGTGTCAGCTTCAATGGTAGTTTCTATGGAGGTAATAGGAATGTTCGTGGTCAACTGCAACTATCAATGGAGGAAGACGATGGTGTTCTTAGACCAATTGGATTTATTCCAATTGGAGGTTATTTGTACCATAATGATTATGGGTATTATCAAGGTGAGAAGACATTTAATCTGGATGTGGAGTCTCAATACTTGAAGGCAGATGAAGATTACAACAAACTGTTCGTGGTAAATATTTTGAATGAAAATGGATTAGATGATAGATGTGATTTGAAGGTGTTTGTTGTTCATACACTTAGAATCAAGGTGTAATTAGTACATCAGTGTAATTAATGTTAATTAATGAATATTTATTATTTTAAGTGTTGTTAATGAATATAATTATAGATTGATATTGTTTTTAATAACTCCGCGAAGCGGTATGGATCAGCCCAATAGGCCCAATAGTTAATAGGCCCAATATAAATGGGGATCAGCTGACGTCAGCTGATCCCGTGACAGCCTGGGACGGGGCTTAGTATT",
+#          "LC521492.1": "GAGAGGCGGCATAGTATTACCCGCCTCTCATCCCTCACCTTTCATCCCGGTCCCACCATGCCAACTGTGCAATCCACTTGTTGGGTGTTCACACTTAACTTTAAAGGCGAAATTCCTATTTTGCCCTTTAATGACCGCGTTCAGTACGCCTGTTGGCAACACGAAAGAGTGGGCCATGACCATTTACAGGGCTTTATTCAGATGAAGGCCCAACAATCTTTGGGCCAAATGAAGGCCATTATTCCTGGAGCCCATTTTGAGAAAATGAGGGCATTAAATACAGACCAGGCTAAGGCTTACGCTATGAAGGAAGACACACGAATAGAAGGACCATGGGAGTATGGTTTATACATTAAGAAGGGATCGCATAAGAGAAAAATTATGGAGCGATTTGAAGATGACCCAGAAGAAATGAAGATTGAAGATCCCTCACTATATCGTCGGTGTTTATCAAGGAAGATGACAGAAGAACAACGATCAACTGCAGAGTGGAATTACGACATGAGGCCATGGCAAGACCAAGTCATACAAGAGATAGAAGAGACACCTGATTACCGAAAGATTATCTGGGTTTACGGCCCCAAAGGAGGTGAAGGAAAGAGTACGTTTGCCAGGTACCTTTCACTCAAACAAGGTTGGGGTTATTTACCTGGTGGTAAGACGCATGACATGATGCATATCATCAGTGGAGAACCGAAGAACAACTGGGTCTTTGACATCCCAAGAGTAGCGTCTGAGTATGTGAACTATGGTGTATTAGAGCAGGTTAAAAATAGAGTTATGGTTAATACTAAGTACGAGCCAATAGTAATTAGGGATGATAATCATCCTGTTCATGTAATTGTGTTTGCTAATTGTATGCCAGACTTCACAAAAATAAGTGAAGATCGAATGAAAATAGTCCATTGTTAAGAAATATGTTGTTTTTGAAATTACGCGAAGCGAAGTCCCACATCGAATAGGTTGGAGAACTGAGCGAGGGATGAAAGCAATAAATAGG",
+#          "MN273341.1": "ACCCCGCCTTGGAACACCTCCTTGGAACGGGTATAAAAATAAATGAAAAATAAAATTAATTAATGGCTTGTGCGAATTGGGTTTTCACGCGTAACTTTGAAGGTGCTCTCCCTTCTCTCTCGTTCGACGAGAGAGTTCAATATGCATCCTGGCAACATGAGAGAGGATCACATGATCATATCCAGGGAGTAATTCAACTGAAGAAGAAGGCAAGAATATCAACTGTGAAGGAGTTAATTGGTGGAAATCCTCATCTGGAGAAGATGAAGGGTACAATTGAAGAAGCTACTGCTTATTCCCAGAAAGAAGAAACACGAGTTGCAGGTCCATGGAGTTATGGGGAAATTTTAAAGAAAGGAAGTCATAAGAGGAAGACGATGGAGAGATACTTAGAAGATCCAGAAGAAATGAGATTGAGGGATCCTGATACTGCTCTTCGATGTAAGGCGAAGAAATTAAAGGAAGAATATTGTTCTTCCTTTTCTGGGTTCAAGCTTCGTCCATGGCAGGTTGAGCTTCATAGAGCTTTAATGGCAGAACCAGACAACCGGACAATTATCTGGGTTTATGGTCCTGATGGAGGAGAAGGAAAATCAACGTTTGCTAAGGAATTAATTAAATATAATTGGTTTTATTCAGCAGGAGGGAAGACTCAAGACGTTCTGTATATGTATGCACAAGATCCAGAAAGAAATATTGCCTTTGATGTGCCCAGATGTTCTTCGGAGATGATGAACTATCAAGCGATGGAGATGATGAAAAATAGATGCTTTGCAAGTACAAAATATAGGCCCGTAGATCTTTGTGTTATGAAAAATGTACATTTAATTGTGTTTGCCAACGTGGCACCGGACCCCACAAAAATAAGTGAGGACAGAATTGTAATTATTAATTGTTGAATTTGAATTTTAAAACTTCGCGAAGCGCCAATTTTCCCGCTCTTTATGCGTTTTATCAAAACGCAGTCGTTTTTACCTTGGACCAAGGCGGGTTGAGTATT",
+#          "MN273331.1": "ACCCCGCCTTGGAACACCTCCTTGGAACGGGTATAAAAATAAATGAAAAATAAAATTAATTAATGGCTTGTGCGAATTGGGTTTTCACGCGTAACTTTGAAGGTGCTCTCCCTTCTCTCTCGTTCGACGAGAGAGTTCAATATGCATCCTGGCAACATGAGAGAGGATCACATGATCATATCCAGGGAGTAATTCAACTGAAGAAGAAGGCAAGAATATCAACTGTGAAGGAGTTAATTGGTGGAAATCCTCATCTGGAGAAGATGAAGGGTACAATTGAAGAAGCTACTGCTTATTCCCAGAAAGAAGAAACACGAGTTGCAGGTCCATGGAGTTATGGGGAAATTTTAAAGAAAGGAAGTCATAAGAGGAAGACGATGGAGAGATACTTAGAAGATCCAGAAGAAATGAGATTGAGGGATCCTGATACTGCTCTTCGATGTAAGGCGAAGAAATTAAAGGAAGAATATTGTTCTTCCTTTTCTGGGTTCAAGCTTCGTCCATGGCAGGTTGAGCTTCATAGAGCTTTAATGGCAGAACCAGACAACCGGACAATTATCTGGGTTTATGGTCCTGATGGAGGAGAAGGAAAATCAACGTTTGCTAAGGAATTAATTAAATATAATTGGTTTTATTCAGCAGGAGGGAAGACTCAAGACGTTCTGTATATGTATGCACAAGATCCAGAAAGAAATATTGCCTTTGATGTGCCCAGATGTTCTTCGGAGATGATGAACTATCAAGCGATGGAGATGATGAAAAATAGATGCTTTGCAAGTACAAAATATAGGCCCGTAGATCTTTGTGTTATGAAAAATGTACATTTAATTGTGTTTGCCAACGTGGCACCGGACCCCACAAAAATAAGTGAGGACAGAATTGTAATTATTAATTGTTGAATTTGAATTTTAAAACTTCGCGAAGCGCCAATTTTCCCGCTCTTTATGCGTTTTATCAAAACGCAGTCGTTTTTACCTTGGACCAAGGCGGGTTGAGTATT", 
+#          "LC010784.1": "ACCCGCCTCTCATCCCTCACCTTTCATCCCGGTCCCACCATGCCAACTGTGCAATCCACTTGTTGGGTGTTCACACTTAACTTTAAAGGCGAAATTCCTATTTTGCCCTTTAATGACCGCGTTCAGTACGCCTGTTGGCAACACGAAAGAGTGGGCCATGACCATTTACAGGGCTTTATTCAGATGAAGGCCCAACAATCTTTGGGCCAAATGAAGGCCATTATTCCTGGAGCCCATTTTGAGAAAATGAGGGCATTAAATACAGACCAGGCTAAGGCTTACGCTATGAAGGAAGACACACGAATAGAAGGACCATGGGAGTATGGTTTATACATTAAGAAGGGATCGCATAAGAGAAAAATTATGGAGCGATTTGAAGATGACCCAGAAGAAATGAAGATTGAAGATCCCTCACTATATCGTCGGTGTTTATCAAGGAAGATGACAGAAGAACAACGATCAACTGCAGAGTGGAATTACGACATGAGGCCATGGCAAGACCAAGTCATACAAGAGATAGAAGAGACACCTGATTACCGAAAGATTATCTGGGTTTACGGCCCCAAAGGAGGTGAAGGAAAGAGTACGTTTGCCAGGTACCTTTCACTCAAACAAGGTTGGGGTTATTTACCTGGTGGTAAGACGCATGACATGATGCATATCATCAGTGGAGAACCGAAGAACAACTGGGTCTTTGACATCCCAAGAGTAGCGTCTGAGTATGTGAACTATGGTGTATTAGAGCAGGTTAAAAATAGAGTTATGGTTAATACTAAGTACGAGCCAATAGTAATTAGGGATGATAATCATCCTGTTCATGTAATTGTGTTTGCTAATTGTATGCCAGACTTCACAAAAATAAGTGAAGATCGAATGAAAATAGTCCATTGTTAAGAAATATGTTGTTTTTGAAATTACGCGAAGCGAAGTCCCACATCGAATAGGTTGGAGAACTGAGCGAGGGATGAAAGCAATAAATGGGGAGAGGCGGCATAGTATT",
+#          "NC_003648.1": "CTGGGGCGGGGCTTAGTATTACCCCCGCCCAGGATCAGCGGAGTCATCACGTGACCCGCACATGCCATTAGTCTATATATAGCTCAAGTTGTAATATTTTATCATTCATGAATAAAATATGGCTCGGCAAGTTATATGCTGGTGCTTTACATTAAATAATCCTCTCTCTCCTCTTTCTCTTCATGAATTAATGAAGTACCTTGTTTATCAAAGAGAACAAGGTGAAGCTGGAAATATTCATTTCCAGGGTTATATTGAGATGAAGAAACGCACGTCTCTTGCAGGTATGAAGAAATTAATCCCAGGTGCCCACTTCGAAAAGAGGAGAGGTACTCAAGGTGAAGCTAGAGCTTACGCCATGAAGGAAGACACCCGTCTTGAAGGTCCATGGGAGTATGGGGAGTTCATCCCCACCATTGAAGATAAGCTCAGAGAAGTTATGAACGACATGAAGATTACAGGTAAGAGACCTATTGAGTATATAGAAGAGTGTTGTAATACATATGATAAATCTGCGAGTACTCTAAGGGAATTCAGAGGTGAGTTGAAGAAGAAGAAGGCAATTATAAGTTGGGAGTTGCAGAGGAAGCCATGGATGGACGAGGTTGATACCTTGCTTCAAGAGAGAGATGGAAGACGAATCATTTGGGTGTATGGCCCACAAGGTGGAGAAGGGAAAACCTCTTACGCTAAGCATCTTGTGAAAACGCGTGATGCTTTTTATTCGACAGGTGGAAAGACAGCCGACATTGCTTTTGCGTGGGACCACCAAGAGTTAGTGCTGTTCGACTTTCCTCGAAGCTTCGAGGAGTATGTCAATTACGGAGTAATTGAGCAATTAAAAAATGGAATAATACAGTCTGGCAAGTATCAAAGTGTAATTAAGTATAGTGATTATGTGGAAGTGATTGTATTTGCTAATTTTACTCCGCGTAGCGGCATGTTTAGTGACGATAGGATTGTGTATGTATATGCATGACGTCATATGATCCCTTGCTGAG", 
+#          "NC_003640.1": "GAGAGGCGGCATAGTATTACCCGCCTCTCATCCCTCACCTTTCATCCCGGTCCCACCATGCCAACTGTGCAATCCACTTGTTGGGTGTTCACACTTAACTTTAAAGGGGAAATTCCTATTTTGCCCTTTAATGAACGCGTTCAGTACGCCTGTTGGCAACACGAAAGAGTGGGCCATGACCACTTACAGGGCTTTATTCAGATGAAGGCCCAACAATCTTTGGGCCAAATGAAGGCCATTATTCCTGGAGCCCATTTTGAGAAAATGAGGGCATTAAATTCAGACCAGGCTAAGGCTTACGCTATGAAGGAAGACACACGAATAGAAGGACCATGGGAGTATGGAAAATACATTAAGAAGGGATCGCATAAGAGAAAAATTATGGAGCGATTTGAAGACGACCCAGAAGAAATGAAGATTGAAGATCCCTCACTATATCGTCGTTGTCTATCAAGGAAGATGACAGAAGAACAACGATCAACTGCAGAGTGGAATTACGATATGAAGCCATGGCAAGACCAAGTCATACAAGAGATAGAAGAGACACCTGATTACCGAAAGATTATATGGGTTTACGGCCCCAAAGGAGGTGAAGGAAAGAGTACGTTTGCCAGGTACCTTTCACTCAAACAAGGTTGGGGTTATTTACCTGGTGGTCCGACGCATGACATGCTGCATATCATCAGTGGAGAACCGAAGAACAACTGGGTCTTTGACATCCCAAGAGTAGCGTCTGAGTATGTGAATTATGGTGTATTAGAACAGGTTAAAAATAGAGTTATGGTTAATACTAAGTATGAGCCAATAGTAATTAGGGATGATAATCATCCTGTTCATGTAATTGTGTTTGCTAATTGTATGCCAGACTTCACAAAAATAAGTGAAGATCGAATGAAAATAGTCCATTGTTAAGAAATATGTTGTTTTTAAAACTACGCGAAGCGAAGTCCCACATCGAATAGGTTGGAGAACTGAGCGAGGGATGAAAGCAATAAATAGG",
+#          "MW959719.1": "GAATGTAAAATTTTTATAACAAATAAAAACTTTCAACAACGGATCTCTTGGCTCTCGCATCGATGAAGAACGCAGCGAAATGCGATACGTAATGTGAATTGCAGAATTCAGTGAATCATCGAATCTTTGAACGCATCTTGCGCTCTCTGGTATTCCGGAGAGCATGTCTGTTTGAGTGTCATGAATTCTTCAACCCAACTGTTTCTTGTAAACAGCTGGTGTTTGGATTCTGAGCGCTGCTGGCTTCGTGCCTAGCTCGTTCGTAATACATCAGCATCCCTAATACAAGTTTGGATTGACTTGGCGTAATAGACTATTCGCTAAGGATTCAATGTTCGCATTGAGCCAACTTAATTATGGAAGCTTCTAATTGAAAAGTCTACCTTTAGATTAGATCTCAAATCAGGCAGGATTACCCGCTGAACTTAAGCATATCAATAAGCGGAGGAAAAGAAACTAACAAGGATTCCCCTAGTAGCGGCGAGCGAAGCGGGAAAAGCTCAAATTTGTAATCTGGCGTCTACGACGTCCGAGTTGTAATCTCGAGAAGTGTTTTCCGTGATAGACCGCATACAAGTCTCTTGGAACAGAGCGTCATAGTGGTGAGAACCCAGTACACGATGCGGATGCCTATTACTTTGTGATACACTTTCGAAGAGTCGAGTTGTTTGGGAATGCAGCTCAAATTGGGTGGTAAATTCCATCTAAAGCTAAATATTGGCGAGAGACCGATAGCGAACAAGTACCGTGAGGGAAAGATGAAAAGCACTTTGGAAAGAGAGTTAACAGTACGTGAAATTGTTGGAAGGGAAACACATGCAGCCAGACTTGCTATTCGGGGCAACTCGATTGGCAGGCCCGCATCAGTTTTTCGGGGCGGAAAAGCATAGAGAGAAGGTAGCAATTTCGGTTGTGTTATAGCTCTTTATTGGATTCGCCCTGGGGGACTGAGGAACGCAGCGTGCTTTTAGCATAAGCTTCGGCTTATCCACGCTTAGGAT"}
+#     # z = "exp-000000-000001-000002_14_12_2021_0_21_33.json"
+#     z = "secuencies100-BIMS-test-2022-03-31_15h16m37s57794ms.json"
+#     align = Alineador_multi(secuencias=y, tolerancia_atras=2, tolerancia_delante=2, json_patrones= os.path.join(x, z))
+#     align.alineador()

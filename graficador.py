@@ -11,14 +11,21 @@ EXP_FOLDER = join(dirname(realpath(__file__)), 'experimentos')
 class Graficador(object):
    
     
-    def __init__(self, list_align_plt = [[]]):
+    def __init__(self, list_align_plt = [[]], imprimirLogo = False):
         self.list_align_plt = list_align_plt
+        self.imprimirLogo = imprimirLogo
     
     def set_list_align_plt(self, list_align_plt = [[]]):
         self.list_align_plt = list_align_plt
     
     def get_list_align_plt(self):
         return self.list_align_plt
+    
+    def set_imprimirLogo(self, impirmirLogo):
+        self.imprimirLogo = impirmirLogo
+        
+    def get_imprimirLogo(self):
+        return self.imprimirLogo
     
     def contador(self):
         
@@ -127,6 +134,7 @@ class Graficador(object):
         plt.show()
         
     def ploteo_logo_seq_align(self, patron = ""):
+        
         w = len(self.list_align_plt[0])
         # pd_conteos =    logomaker.alignment_to_matrix(seq_ali)
         df_conteos = self.contador()  #logomaker.alignment_to_matrix()
@@ -134,23 +142,26 @@ class Graficador(object):
         #print(type(df_conteos))
         #print(df_conteos.iloc[0])
         df_info = logomaker.transform_matrix(df_conteos, pseudocount=0.0001, from_type="counts", to_type="information")
-        lm = logomaker.Logo(df_info,figsize=(w,4.5))
-        lm.ax.set_yticks([0,1,2])
-        lm.ax.set_xticks(range(0,w))
+        
         motif, exp_reg = self.obtener_motif(df_conteos)
         # print(motif)
-        plt.xlabel("Posiciones")
-        plt.ylabel("Información (bits)")
-    
-        if motif != "":
-            plt.title("LOGO - "+motif)
-            
-        else:
-            plt.title("LOGO - "+patron)
+        if self.imprimirLogo == True:
+            lm = logomaker.Logo(df_info,figsize=(w,4.5))
+            lm.ax.set_yticks([0,1,2])
+            lm.ax.set_xticks(range(0,w))
+            plt.xlabel("Posiciones")
+            plt.ylabel("Información (bits)")
         
-        plt.savefig(os.path.join(EXP_FOLDER, "motifs_png", patron)+".png")
-        plt.close("all")
-        plt.show()
+            if motif != "":
+                plt.title("LOGO - "+motif)
+                plt.savefig(os.path.join(EXP_FOLDER, "motifs_png", patron)+".png")
+                plt.close("all")
+            
+        # plt.show()
+        # else:
+        #     plt.title("LOGO - "+patron)
+        
+        
         
         return df_conteos, df_info, motif, exp_reg
 

@@ -1,9 +1,11 @@
 
 # from os import truncate
 import glob
+import imp
 import sys
 import os
 from click import FileError, exceptions
+from numpy import False_
 from tqdm import tqdm
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -58,6 +60,10 @@ def find_n_patterns_bims():
         z1, "multi"+os.path.sep)+'*.fasta')
     i = 0
     for archivo in tqdm(archivos):
+        head, tail = os.path.split(archivo)
+        tail = tail.replace(".fasta", "")
+        tail = tail.replace(".", "")
+        print(tail)
         d1 = datetime.now()
         print("leyendo archivos")      
         read = r.Reader(archivo)
@@ -66,7 +72,7 @@ def find_n_patterns_bims():
         pdt = datetime.now()
         print("iniciando analisis")
         
-        pf = BI_n_sequences_copy.basado_indices_secuencial(db_sequence=list_sequences, min_sup=5, keys_seqs=keys_seq ,inputType='archivo', inputName=y)
+        pf = BI_n_sequences_copy.basado_indices_secuencial(db_sequence=list_sequences, min_sup=2, keys_seqs=keys_seq ,inputType='archivo', inputName=tail)
         pf.set_initDateTime(pdt)
         tqdm(pf.set_pos(pf.find_pos()))
         tqdm(pf.run())
@@ -81,12 +87,12 @@ def find_n_patterns_bims():
         }
         
         align = Alineador_Patornes_multi.Alineador_multi(
-            secuencias=dict(zip(keys_seq, list_sequences)), tolerancia_atras=2, tolerancia_delante=2, json_patrones=pf.info_patrones())
-        align.alineador_multi()
+            secuencias=dict(zip(keys_seq, list_sequences)), tolerancia_atras=2, tolerancia_delante=2, json_patrones=pf.info_patrones(), imprimir_logo=True)
+        align.alineador()
         
         print("analisis finalizado")
         try:
-            with open(z1+"multi"+os.path.sep+"secuencies"+str(len(keys_seq))+str(i)+'-BIMS-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+            with open(z1+"multi"+os.path.sep+tail+"secuencies"+str(len(keys_seq))+'_BIMS_test_'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
                 json.dump(pf.info_patrones(), file_object_json, sort_keys=True, indent=4)
                 
         except FileError as e:                
@@ -122,13 +128,23 @@ def find_n_patterns_bims():
         
         i += 1
         
+        break
+        
 
 def find_n_patterns_gsp():
     '''Funcion para probar bims con diferentes archivos'''
+    
     archivos = glob.glob(os.path.join(
-        z, "adicional multi"+os.path.sep)+'*.fasta')
+        z1, "multi"+os.path.sep)+'*.fasta')
+    
+    # archivos = glob.glob(os.path.join(
+    #     z, "adicional multi"+os.path.sep)+'*.fasta')
     i = 0
     for archivo in tqdm(archivos):
+        head, tail = os.path.split(archivo)
+        tail = tail.replace(".fasta", "")
+        tail = tail.replace(".", "")
+        print(tail)
         d1 = datetime.now()
         print("leyendo archivos")
         read = r.Reader(archivo)
@@ -138,7 +154,7 @@ def find_n_patterns_gsp():
         print("iniciando analisis")
 
         pf = gsp.GSP(
-             ds=list_sequences, min_sup=5, keys_seqs=keys_seq, inputType='archivo', inputName=y)
+            ds=list_sequences, min_sup=2, keys_seqs=keys_seq, inputType='archivo', inputName="tail")
         pf.set_initDateTime(pdt)
         # tqdm(pf.set_pos(pf.find_pos()))
         tqdm(pf.run())
@@ -155,11 +171,11 @@ def find_n_patterns_gsp():
         print("analisis finalizado")
         
         align = Alineador_Patornes_multi.Alineador_multi(
-            secuencias=dict(zip(keys_seq, list_sequences)), tolerancia_atras=2, tolerancia_delante=2, json_patrones=pf.info_patrones())
-        align.alineador_multi()
+            secuencias=dict(zip(keys_seq, list_sequences)), tolerancia_atras=2, tolerancia_delante=2, json_patrones=pf.info_patrones(), imprimir_logo=False)
+        align.alineador()
         
         try:
-            with open("secuencie"+str(len(keys_seq))+str(i)+'-GSP-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+            with open(z1+"multi"+os.path.sep+"secuencie"+str(len(keys_seq))+tail+'_GSP_test_'+'-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
                 json.dump(pf.info_patrones(), file_object_json,
                           sort_keys=True, indent=4)
 
@@ -174,7 +190,7 @@ def find_n_patterns_gsp():
 
         # print('Duración: ', d2-d1)
         df = pd.json_normalize({
-            "Nombre_archivo: ": archivo, #y
+            "Nombre_archivo: ":  tail + ".fasta", #archivo, #y
             "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
             "Num Aprox de bp: ": os.path.getsize(x+y),
             'Algoritmo': '(PA)+GSP+alineador',
@@ -203,6 +219,9 @@ def find_patterns_bi():
     i = 0
     # print(archivos)
     for archivo in tqdm(archivos):
+        head, tail =  os.path.split(archivo)
+        tail = tail.replace(".fasta","")
+        tail = tail.replace(".","")
         d1 = datetime.now()
         print("leyendo archivos")      
         read = r.Reader(archivo)
@@ -211,7 +230,7 @@ def find_patterns_bi():
         pdt = datetime.now()
         print("iniciando analisis")
         pf = BI_copy.basado_indices(
-            s=list_sequences[0], min_sup=2, keys_seqs=keys_seq, inputType='archivo', inputName=""+str(i))
+            s=list_sequences[0], min_sup=2, keys_seqs=keys_seq, inputType='archivo', inputName=tail)
         # pf = BI_n_sequences_copy.basado_indices_secuencial(db_sequence=list_sequences, min_sup=5, keys_seqs=keys_seq ,inputType='archivo', inputName=y)
         pf.set_initDateTime(pdt)
         tqdm(pf.set_pos(pf.find_pos()))
@@ -227,12 +246,12 @@ def find_patterns_bi():
         }
         
         align = Alineador_Patornes.Alineador(
-            secuencia=list_sequences[0], tolerancia_atras=2, tolerancia_delante=2, json_patrones=dataBi)
+            secuencia=list_sequences[0], tolerancia_atras=2, tolerancia_delante=2, json_patrones=dataBi, imprimir_logo=True)
         align.alineador()
 
         print("analisis finalizado")
         try:
-            with open(z1+"una"+os.path.sep+"sequences_"+str(keys_seq)+str(i)+'-BI-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+            with open(z1+"una"+os.path.sep+tail+"_"+"sequences_"+str(keys_seq)+'-BI-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
                 json.dump(dataBi, file_object_json, sort_keys=True, indent=4)
                 
         except FileError as e:                
@@ -244,7 +263,7 @@ def find_patterns_bi():
         d2 = datetime.now()
         # print('Duración: ', d2-d1)
         df = pd.json_normalize({
-            "Nombre_archivo: ": archivo, #"sequence_experimental_1_1000_"+str(i),
+            "Nombre_archivo: ": tail+".fasta", #"sequence_experimental_1_1000_"+str(i),
             "Peso_archivo (MB): ": (os.path.getsize(x1+y1)/1000000),
             "Num Aprox de bp: ": os.path.getsize(x1+y1),
             'Algoritmo': '(PA)+BI+alineador',
@@ -266,6 +285,8 @@ def find_patterns_bi():
         pf.clear()
         
         i+=1
+        
+        break
 
 
 def bims_stand_alone():
@@ -288,9 +309,9 @@ def bims_stand_alone():
     
 
 if __name__ == '__main__':
-    # find_patterns_bi()
+    find_patterns_bi()
     find_n_patterns_bims()
-    #find_n_patterns_gsp()
+    # find_n_patterns_gsp()
 
 
 
