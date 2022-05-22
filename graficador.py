@@ -146,7 +146,7 @@ class Graficador(object):
         motif, exp_reg = self.obtener_motif(df_conteos)
         # print(motif)
         if self.imprimirLogo == True:
-            lm = logomaker.Logo(df_info,figsize=(w,4.5))
+            lm = logomaker.Logo(df_info,figsize=(w-1.5,4.5-1 ))
             lm.ax.set_yticks([0,1,2])
             lm.ax.set_xticks(range(0,w))
             plt.xlabel("Posiciones")

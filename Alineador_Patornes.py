@@ -5,6 +5,7 @@ from xmlrpc.client import boolean
 from graficador import Graficador
 from os.path import join, dirname, realpath
 from tqdm import tqdm
+import copy
 
 EXP_FOLDER = join(dirname(realpath(__file__)), 'experimentos')
 #Notas
@@ -141,7 +142,7 @@ class Alineador(object):
                 #     list_info[existsPos]["patron"] = patrones[i]
                 #     list_info[existsPos]["traduccion_aminoacido"] = aminoacidos[i]
                     
-
+        list_info.sort(key=lambda dicts: dicts["longitud_motif"], reverse=True)
         dict_json["Alineaciones"] = list_info
         dict_json["Num_alineaciones"] = len(list_info)
         # print(dict_json)
@@ -276,12 +277,11 @@ class Alineador(object):
             
         #Formacion del nombre del archivo, tal como lo hace el server    
         x=""
-        x += "EXP_"+str(kargs['Siglas']) + '_' +\
-               str(kargs['Min_sup']) + '_' + \
-               str(kargs['Tipo_Entrada']) + '_' + \
-               str(kargs['Entrada']).split(".fasta")[0] + '_' + \
-               str(kargs['Num_Sequencias_ananlizadas']) + '_' + \
-               str(kargs['Num_Patrones_hallados']) + '_'
+        x += "EXP_"+str(kargs['Entrada']).split(".fasta")[0] + '_' + \
+            str(kargs['Siglas']) + '_' +\
+            str(kargs['Min_sup']) + '_' 
+            # + \
+            # str(kargs['Num_secuencias_analizadas']) + '_' 
 
         dt = datetime.datetime.strptime(kargs['Fecha_Hora_Inicio'], '%Y-%m-%d %H:%M:%S.%f')
 
@@ -360,20 +360,22 @@ class Alineador(object):
         """Funcion para calcular las posibles mutaciones que pueda tener el patron frecuente a motif """
         ban = True  # Boolano para indicar y la columna es homogenia o no
         ban_brk = True  # Booleano para indicar si hay que romper el while
-        brk_menor_seis = True #Booleano para indicar que si el patron no cumple con una poscion menor a la longitud de la secuencia
+        # brk_menor_seis = True #Booleano para indicar que si el patron no cumple con una poscion menor a la longitud de la secuencia
         pre_ali = [] # Captura al principio las primeras alineaciones hacia delante (posiciones)
-        rec_ali = []  # guarda las posciones de pre ali (record)
+        # guarda las posciones de pre ali (record);
+        rec_ali = [patron_original for i in range(len(lista_posiciones))]
         pos_delante = self.tolerancia_delante
         i = 0
-        while(pos_delante > 0):  # Busqueda hacia delante
+        
+        while(pos_delante >= 0):  # Busqueda hacia delante
               # Se pone el patron dentro de la variable
-            patron_evaluar = patron_original
+            
 
-            for p in lista_posiciones:  # por cada posicion
+            for index,p in enumerate(lista_posiciones):  # por cada posicion
                 # # si la longitud del patron es menor a 6 y la posicion mas 6 no arrebasa la longitud de la secuencia
                 # if len(patron_evaluar) < self.longitud_minina_cre and p+self.longitud_minina_cre < len(self.secuencia)-1:
                 #     # Se le agregan otras seis posiciones
-                #     patron_evaluar = self.secuencia[p:p +
+                #     patron_evaluar = self.secuencia[p:p
                 #                                     self.longitud_minina_cre]
                 # # si la longitud es menor a  6 pero la(s) posiciones
                 # elif p+self.longitud_minina_cre >= len(self.secuencia)-1 and len(patron_evaluar) < self.longitud_minina_cre:
@@ -381,37 +383,38 @@ class Alineador(object):
                 #     ban = False
                 #     brk_menor_seis = False
                 #     break
-
+                
+                index_patron_delante= p+len(patron_original) #index de la secuecia que esta delante del patron
                 # Si lo que vamos a buscar despues del patron no sobrepasa a la longitud de la secuencia
-                if i+p+len(patron_evaluar) <= len(self.secuencia)-1:
+                if i+index_patron_delante <= len(self.secuencia)-1:
                     if i == 0:  # Si i es igual a cero
                         # Se añade a la lista preliminar (pre_ali) el patron mas el nucleotido que este enfrente
-                        pre_ali.append(patron_evaluar+self.secuencia[p+len(patron_evaluar)+i])
-                        pre_ali.append(patron_evaluar+self.secuencia[p+len(patron_evaluar)+i])
+                        pre_ali.append(self.secuencia[index_patron_delante])
+                        # pre_ali.append(patron_evaluar+self.secuencia[p+len(patron_evaluar)+i])
                         #patron = patron+self.secuencia[p+len(patron)+i]
                     else:  # si no
                         # Se añade a la lista preliminar (pre_ali) el patron con tolerancia mas el nucleotido que este enfrente
-                        pre_ali.append(patron_evaluar+self.secuencia[p+len(patron_evaluar):p+len(patron_evaluar)+i+1])
-                        pre_ali.append(patron_evaluar+self.secuencia[p+len(patron_evaluar):p+len(patron_evaluar)+i+1])
-                        # patron = patron + self.secuencia[p+len(patron):p+len(patron)+i+1]
+                        if len(pre_ali) == 0 or len(pre_ali) != len(rec_ali): #Despues de añadir la busqueda a rec_ali, se tiene que llenar de
+                            #nuevo pre_ali, por lo que se añade la sig busqueda si pre_ali ==0 o si no tienen la misma longitud que rec_ali
+                            pre_ali.append(self.secuencia[index_patron_delante+i])
+                        else: #En caso de que no, sigue la busqueda
+                            pre_ali[index] = pre_ali[index] + self.secuencia[index_patron_delante+i]
+
                     if len(pre_ali) > 1:
                         # Asumiendo de que TODOS los. patrones se les añade el "mismo" nucleotido, solo se comparan dos, el ultimo elementos del primer patron vs el ultimo elemento del ultimo patron
-                        for j in range(len(pre_ali)):
-                            if pre_ali[j][-1] != pre_ali[-1][-1]:
-                                ban = False
-                                break
+                        #teniendo en cuenta que tienen que tener la misma longitud
+                        if len(pre_ali[0]) == len(pre_ali[index]) and pre_ali[0][-1] != pre_ali[index][-1]:
+                            ban = False
+
                 else:  # Si se supera la posicion se rompe SOLO EL FOR
                     pos_delante = 0
                     ban = False
                     ban_brk = False
                     break
 
-                patron_evaluar = patron_original
-
             if ban_brk == False:  # break para romper el WHILE
-                if len(rec_ali) == 0: # En caso de que rec_ali no tenga nada que retornar
-                    rec_ali = [patron_evaluar for i in range(
-                        len(lista_posiciones))]
+            #     if len(rec_ali) == 0: # En caso de que rec_ali no tenga nada que retornar
+            #         rec_ali = [patron_evaluar for i in range(len(lista_posiciones))]
                 break
 
             if ban == False:  # break para romper
@@ -419,16 +422,18 @@ class Alineador(object):
                 pos_delante -= 1
             else:
                 pos_delante = self.tolerancia_delante
+                rec_ali = [r_ali+p_ali for r_ali, p_ali in zip(rec_ali,pre_ali)]
+                pre_ali.clear()
             
-            if brk_menor_seis == False or len(pre_ali):
-                rec_ali=[patron_evaluar for i in range(len(lista_posiciones))]
-                break
+            # if brk_menor_seis == False :
+            #     rec_ali=[patron_evaluar for i in range(len(lista_posiciones))]
+            #     break
 
             i += 1
-            rec_ali.clear()
+            # rec_ali.clear()
             # A medida que crecen los patrones en el alineamiento se tienen que guardar en la lista rec_ali
-            rec_ali = pre_ali[:]
-            pre_ali.clear()
+            # rec_ali = pre_ali[:]
+            # pre_ali.clear()
         
         return rec_ali
         #fin de la funcion
@@ -437,17 +442,20 @@ class Alineador(object):
         i = 1
         ban = True  # Boolano para indicar y la columna es homogenia o no
         ban_brk = True  # Booleano para indicar si hay que romper el while
-        brk_menor_seis = True #Booleano para indicar que si el patron no cumple con una poscion menor a la longitud de la secuencia
-        pre_ali = lista_alineaciones #Se reciben nuevas posiciones
-        new_posiciones = [] #listas de nuevas posiciones
-        rec_ali =[] #record ieterativo de los alineamientos
-        aux = [] #record final de los alineamientos
+        # brk_menor_seis = True #Booleano para indicar que si el patron no cumple con una poscion menor a la longitud de la secuencia
+        # pre_ali = lista_alineaciones #Se reciben nuevas posiciones
+        pre_ali = [] #record iterativo de los alineamientos
+        new_posiciones = copy.deepcopy(lista_posiciones)  # listas de nuevas posiciones
+        # se reciben las alineaciones
+        rec_ali = copy.deepcopy(lista_alineaciones)
+        aux_pos = [] #record final de los alineamientos
         pos_atras= self.tolerancia_atras
         
-        while(pos_atras > 0): 
-            for k in range(len(lista_posiciones)): #se recore la lista de posiciones
-                alineamiento = pre_ali[k] # se toma el patron alineado compuesto
-                pos_align = lista_posiciones[k] # se toma la posicion actual
+        while(pos_atras >= 0): 
+            # for k in range(len(lista_posiciones)): #se recore la lista de posiciones
+            for k, pos_align in enumerate(new_posiciones):  # se recore la lista de posiciones
+                # alineamiento = rec_ali[k] # se toma el patron alineado compuesto
+                # pos_align = lista_posiciones[k] # se toma la posicion actual
                 # # Si es menor a 6, se le acompletara con las letras detras del patron hasta llegar a 6
                 # if pos_align-(self.longitud_minina_cre-len(alineamiento)) > 0 and len(alineamiento) < self.longitud_minina_cre:
                 #     pos_align = pos_align-(self.longitud_minina_cre-len(alineamiento))
@@ -460,25 +468,30 @@ class Alineador(object):
                 #     brk_menor_seis = False
                 #     break 
                      
-                if (pos_align-i >= 0):
+                if (pos_align-1 >= 0):
                     if i==1: # si la posicion esta dentro de la lista de new_posiciones
                         #Se les añade a los alineamientos la letra anterior y se recorre al posicion a -1
-                        rec_ali.append(
-                            self.secuencia[pos_align-i]+str(alineamiento))
-                        new_posiciones.append(pos_align-1)
+                        # pre_ali.append(self.secuencia[pos_align-i]+str(alineamiento))
+                        pre_ali.append(self.secuencia[pos_align-1])
+                        new_posiciones[k] = new_posiciones[k]-1
+                        # new_posiciones.append(pos_align-1)
                     
                     else: 
                         #se añaden las letras anteriores corespondientes detras de patron 
-                        rec_ali.append(self.secuencia[pos_align-i:pos_align]+str(alineamiento))
+                        # pre_ali.append(self.secuencia[pos_align-i:pos_align]+str(alineamiento))
+                        if len(pre_ali) == 0 or len(pre_ali) != len(rec_ali):
+                            pre_ali.append(self.secuencia[pos_align-1])
+                        else:
+                            pre_ali[k] = self.secuencia[pos_align-1]+pre_ali[k]
+                        
                         #Se actualiza la posicion
                         new_posiciones[k] = new_posiciones[k]-1 
                         
                     #Se verifica la longitud de rec_ali y si es mayor a 1
-                    if len(rec_ali) > 1:
+                    if len(pre_ali) > 1:
                         #Si primer elemento de rec_ali tiene la primera letra diferente a la primera letra del ultimo elemento añadido de rec_ali
-                        if rec_ali[0][0] != rec_ali[-1][0]:
-                            ban = False #Ban igual a False => posiciones permitidas hacia atras decrementan a -1
-                            
+                        if pre_ali[0][0] != pre_ali[k][0] and len(pre_ali[0]) == len(pre_ali[k]):#Ban igual a False => posiciones permitidas hacia atras decrementan a -1
+                            ban = False       
 
                 else:#Si la posicion -1 es inferior 0
                     pos_atras = -1
@@ -487,12 +500,9 @@ class Alineador(object):
                     break
 
             if ban_brk == False: #booleano para romper el ciclo si la posicion en inferior a cero
-                if len(aux) == 0:  # En caso de que rec_ali no tenga nada que retornar
-                    aux.clear
-                    aux = lista_alineaciones[:]
-                    new_posiciones.clear
-                    new_posiciones = lista_posiciones[:] 
-                    
+                if len(aux_pos) == 0:  # En caso de que rec_ali no tenga nada que retornar
+                    aux_pos.clear
+                    aux_pos = copy.deepcopy(lista_posiciones) 
                 break
 
             if ban == False: #booleano para romper el ciclo
@@ -500,23 +510,33 @@ class Alineador(object):
                 pos_atras -= 1
             else:
                 pos_atras = self.tolerancia_atras
+                aux_pos.clear
+                aux_pos = copy.deepcopy(new_posiciones)
+                rec_ali = [p_ali+r_ali for r_ali, p_ali in zip(rec_ali, pre_ali)]
+                pre_ali.clear()
+                
             
-            if brk_menor_seis == False: #si el patron es menor a 6
-                #se mandan las mismas posiciones y alineaciones de entrada 
-                aux.clear
-                aux = lista_alineaciones[:]
-                new_posiciones.clear
-                new_posiciones = lista_posiciones[:]
-                break
+            # if brk_menor_seis == False: #si el patron es menor a 6
+            #     #se mandan las mismas posiciones y alineaciones de entrada 
+            #     aux.clear
+            #     aux = lista_alineaciones[:]
+            #     new_posiciones.clear
+            #     new_posiciones = lista_posiciones[:]
+            #     break
                 
 
-            aux.clear()
-            aux = rec_ali[:]
-            rec_ali.clear()
+            # aux.clear()
+            # aux = rec_ali[:]
+            # rec_ali.clear()
 
             i += 1
+
+        if len(aux_pos) == 0:  # En caso de que aux_pos no tenga nada que retornar
+            aux_pos.clear
+            aux_pos = copy.deepcopy(lista_posiciones)
         
-        return aux, new_posiciones
+        
+        return rec_ali, aux_pos
     
     def alineador(self):
         patrones = self.get_json_patrones()
@@ -606,14 +626,15 @@ class Alineador(object):
                 # pre_ali = [ptr+self.secuencia[p+len(ptr)] if (p+len(ptr)<=len(self.secuencia)-1) else ban=False for ptr in pre_ali for p in posiciones ]
         
 # if __name__ == '__main__':
-#     # x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud diferente\\"
-#     # x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud diferente\\"
-#     # y = "GCTTCCACATGCCGCTGTGANACAGTGGTTTTCGTGTGAGGGCTACGTCGTTAAAGAGAAATAACGATGAGCCCAGGCCTTTTATGGAAAAACCACAGGGTATGCGGTAAACCCCACCACGCAGA"
-#     # y = "GCTTCACATGCCGCTGTGANACAGTGGTTTCGTGTGAGGGCTACGTCGTTAAGAGAATAACGATGAGCCCAGGCCTTTATGGAAAAACCACAGGGTATGCGGTAACCCACCACGCAGA"
-#     # y = "GCGCACGCATCGCACACGCCGGCGCCTTCCTTTGGGAGCCCGGGCCGGTGGCGCGGGCGCTCGGCAAATGGAGTGGGTGCTCGCGGAAGCGCTGCTCTCGCAGAGCCGGGACCCCCGGGCCCTGCTTGGGGCGCTGTGCCAAGGGGAGGCATCCGCGGAGCGCGTGGAGACGCTGCGCTTCCTTCTGCAGCGGCTCGAGGACGAGGAGGCGCGCGGCAGCGGGGGCGCAGGCGCGCTCCCGGAGGCGGCGCGCGAGGTGGCTGCAGGGTACCTCGTGCCACTGCTGCGGAGCCTGCGCGGACGCCCCGCGGGCGGCCCGGACCCCAGTCTGCAGCCTCGCCACCGCCGGCGCGTGCTGAGGGCGGCGGGCGCGGCCCTGCGCTCGTGCGTCCGCCTGGCCGGGCGTCCGCAGCTGGCGGCCGCGCTGGCTGAGGAGGCGCTGCGCGATCTGCTCGCCGGGTGGCGCGCGCCTGGCGCCGAGGCTGCCGTGGAAGTGCTAGCAGCCGTCGGGCCATGTTTGCGGCCCCGCGAGGACGGGCCGCTACTGGAGCGCGTGGCGGGGACCGCCGTCGCCCTGGCGCTGGGCGGGGGCGGGGACGGGGATGAGGCCGGGCCTGCCGAGGACGCGGCGGCGCTGGTGGCCGGGCGACTGCTGCCAGTGCTGGTCCAATGTGGCGGGGCGGCGCTGCGGGCCGTGTGGGGCGGGCTGGCCGCGCCTGGGGCGTCCCTGGGGTCCGGCCGCGTAGAGGAGAAGCTGCTGGTCCTGAGCGCCCTGGCCGAGAAGCTGTTGCCCGAGCCCGGCGGCGACCGCGCCCGCGGCGCGCGCGAGGCGGGCCCGGACGCCCGGCGCTGCTGGCGCTTCTGGAGGACGGTGCAGGCGGGGCTGGGCCAGGCGGACGCCCTGACGCGCAAGCGAGCGCGCTACCTGCTGCAGAGGGCGGTGGAGGTGTCGGCGGAGCTGGGGGCCGACTGCACCTGCGGGCCCCAGGAAGGAAACGGCCCAAGTCTGTTTTGGTGGTCTGAGAGGAAAAAAGATGAGCTTCTAAAGTTTTGGGAAAATTATATTTTAATTATGGAGACTTTAGAAGGAAATCAGATACATGTTATAAAGCCAGTTTTACCAAAGCTAAACAATCTGTTTGAATATGCGGTGTCAGAGGAAAATGGATGTTGGCTCTTTCACCCATCCTGGCATATGTGTATTTATAAAAGAATGTTTGAAAGTGAAAACAAAATCCTGTCCAAAGAAGGTGTTATCCATTTTTTGGAGCTGTATGAAACAAAGATTCTTCCATTTTCACCAGAATTTTCTGAGTTTATTATTGGACCATTAATGGATGCGCTTTCAGAGAGCTCTCTGTATAGCAGGTCCCCAGGCCAGCCAATAGGAAGCTGTTCTCCATTGGGACTGAAATTACAGAAGTTTTTAGTCACTTATATTTCTCTTCTTCCAGAAGAAATAAAGAGTAGCTTCCTATTGAAGTTTATTCGGAAGATGACAAGTAGGCATTGGTGTGCTGTTCCCATTTTGTTTCTATCTAAGGCTTTGGCAAATGTCCCAAGACATAAGGCCCTGGGTATAGATGGGCTTCTTGCTCTCAGGGATGTTATTCATTGCACTATGATCACACATCAGATTCTCCTGAGAGGGGCAGCCCAATGCTACCTTCTTCAAACAGCTATGAATTTGCTAGATGTGGAGAAAGTGTCACTTTCTGATGTCTCAACTTTTCTCATGTCTCTGAGACAAGAGGAATCCTTAGGACGAGGAACTTCATTGTGGACAGAGCTGTGTGACTGGCTACGTGTTAATGAAAGCTATTTTAAGCCATCCCCTACGTGTAGCTCCATTGGACTTCACAAGACATCTTTAAATGCTTATGTAAAGAGCATTGTTCAAGAGTATGTTAAGTCATCTGCTTGGGAAACAGGAGAAAACTGCTTTATGCCTGATTGGTTTGAAGCCAAGCTTGTTTCTCTGATGGTCTTGCTGGCTGTGGATGTGGAAGGAATGAAGACTCAGTATAGCGGAAAGCAGAGAACAGAGAATGTATTGCGGATATTCTTAGACCCTCTTCTGGATGTGCTTATGAAGTTTAGTACCAATGCCTACATGCCCTTGCTGAAGACTGACAGATGCCTCCAGCTGCTGTTGAAGCTGTTGAACACATGCAGGTTGAAAGGTTCCAGTGCCCAAGATGATGAGGTGTCTACTGTTCTTCAGAACTTTTTCATGTCTACTACAGAGAGCATTTCTGAATTTATTCTCAGAAGACTTACTATGAATGAGCTAAATAGTGTTTCAGATCTGGATCGTTGCCATTTATACCTGATGGTGTTAACTGAGCTTATAAATCTGCATTTGAAGGTTGGGTGGAAAAGGGGTAACCCTATCTGGAGAGTTATTTCTCTTTTGAAAAATGCATCCATTCAGCATCTTCAAGAGATGGACAGTGGACAGGAGCCAACAGTTGGAAGTCAGATTCAGAGAGTAGTGAGCATGGCTGCCTTGGCCATGGTGTGTGAGGCCATAGACCAGAAGCCTGAGCTGCAGCTGGACTCTCTCCATGCTGGGCCCCTGGAAAGCTTCCTTTCCTCTCTTCAGCTCAATCAGACGCTGCAGAAGCCCCACGCAGAGGAGCAGAGCAGTTATGCTCACCCCTTGGAGTGCAGCAGTGTTTTGGAAGAATCGTCATCTTCCCAAGGATGGGGAAAAATAGTTGCACAATATATTCATGATCAATGGGTGTGCCTCTCTTTCCTGTTGAAAAAATATCACACCCTTATACCAACCACAGGGAGTGAAATTCTGGAACCGTTTCTACCTGCCGTTCAGATGCCAATAAGGACTTTGCAGTCTGCACTAGAAGCCCTCACAGTTCTTTCTTCTGATCAAGTTTTACCAGTGTTCCATTGCTTGAAAGTGTTGGTTCCCAAGCTTCTGACTTCCTCTGAATCACTCTGCATAGAGTCTTTTGACATGGCGTGGAAAATTATATCTTCTTTAAGCAACACTCAGCTGATATTCTGGGCTAATTTAAAAGCTTTTGTTCAGTTTGTTTTTGATAACAAAGTTCTTACCATTGCTGCCAAAATCAAGGGCCAGGCATATTTCAAAATAAAAGAGATTATGTACAAGATAATTGAAATGTCTGCTATAAAGACTGGAGTCTTCAATACACTGATAAGTTACTGCTGTCAGTCTTGGATAGTGTCTGCTTCAAATGTGTCCCAAGGATCTTTATCAAGTGCTAAAAATTATAGCGAACTTATCCTTGAGGCTTGTATATTTGGAACTGTGTTTAGGCGTGATCAAAGTACTAAGAGAGAAGACCATTATGTGAGAATTTGTGCTGTCAAATTCCTGTGTTTATTAGATGGCTCCAATATGTCCCACAAGTTGTTTATTGAGGATCTTGCAATCAAGCTATTAGATAAAGATGAATTAGTGTCCAAGTCCAAAAAACGCTACTATGTGAATTCTCTACAGCACAGAGTGAAAAACCGAGTGTGGCAGACTCTGCTGGTACTTTTCCCTAGACTTGACCAGAATTTCTTGAATGGAATTATTGACAGGATTTTCCAGGCTGGTTTCACCAACAATCAAGCATCCATAAAATATTTTATAGAATGGATTATTATATTGATTCTTCATAAATTCCCTCAATTTCTTCCAAAGTTCTGGGATTGTTTTTCTTATGGTGAAGAAAATCTTAAAACAAGCATTTGTACGTTTTTAGCAGTTTTATCACATTTAGACATTATTACTCAAAATATTCCAGAAAAGAAACTAATTCTGAAGCAAGCCCTTATAGTTGTGCTGCAGTGGTGTTTCAATCACAATTTTAGTGTTCGACTGTATGCTTTAGTTGCTCTTAAGAAACTCTGGACTGTGTGTAAAGTGTTAAGTGTTGAAGAATTTGATGCCCTGACTCCTGTGATTGAATCCAGCCTCCATCAAGTGGAAAGCATGCACGGAGCAGGGAATGCCAAGAAGAATTGGCAACGCATTCAGGAGCATTTCTTTTTTGCAACATTTCACCCACTCAAGGATTATTGTCTAGAGACCATATTTTACATCCTTCCACGCCTTTCAGGCCTTATTGAAGATGAATGGATCACCATTGATAAATTTACCAGATTCACTGATGTTCCTTTAGCTGCGGGATTTCAGTGGTACCTTTCTCAAACTCAACTTAGTAAACTAAAACCAGGTGACTGGTCTCAGCAAGACATAGGTACTAATTTGGTCGAAGCAGATAACCAAGCGGAGTGGACCGACGTTCAGAAGAAGATTATCCCGTGGAACAGTCGTGTTTCCGACTTAGACCTGGAGCTCCTGTTTCAGGATCGTGCTGCCAGACTTGGAAAGTCAATTAGTAGACTCATCGTTGTGGCCTCGCTCATCGACAAACCGACCAATTTAGGAGGACTGTGCAGGACCTGTGAGGTATTTGGGGCTTCAGTGCTCGTTGTTGGCAGCCTTCAGTGTATCAGCGACAAACAGTTTCAGCACCTCAGTGTCTCTGCAGAACAGTGGCTTCCTCTAGTGGAGGTAAAACCACCTCAGCTAATTGATTATCTGCAGCAGAAGAAAACAGAAGGTTATACCATCATTGGAGTGGAACAAACTGCCAAAAGTTTAGACCTAACCCAATATTGCTTTCCTGAGAAATCTCTGCTCTTGTTGGGAAATGAACGTGAGGGAATTCCAGCAAATCTGATCCAACAGTTGGACGTTTGTGTGGAAATTCCTCAACAGGGCATTATCCGCTCCCTGAATGTCCATGTGAGTGGAGCCCTGCTGATCTGGGAGTACACCAGGCAGCAGCTGCTCTCGCACGGAGATACCAAGCCATGATGTGCCTTCCTTAGTGAACTGCTGCTGCTGTTCAGACTTTTTTAAAAAAAACTATTTGGACTAAAGAAACAGATTCTGAAATTTATTGTGATAATTTGTATTTCTTTTTTCTTGCAATTTAATGCCAAAAGTTTGCCATGTGCCTTAAACATATTACTATATATTTTCCCCTTTAATAAACACTTTTTGTTAAATTGTATTCTTCCTTTAATAAAATATTTTAAGCAATTGTGGAAATAAAA"
-#     # z = "sequence_HL714398-BI-test-2022-02-05_21h47m23s927286ms.json"
+# #     # x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud diferente\\"
+# #     # x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud diferente\\"
+# #     # y = "GCTTCCACATGCCGCTGTGANACAGTGGTTTTCGTGTGAGGGCTACGTCGTTAAAGAGAAATAACGATGAGCCCAGGCCTTTTATGGAAAAACCACAGGGTATGCGGTAAACCCCACCACGCAGA"
+# #     # y = "GCTTCACATGCCGCTGTGANACAGTGGTTTCGTGTGAGGGCTACGTCGTTAAGAGAATAACGATGAGCCCAGGCCTTTATGGAAAAACCACAGGGTATGCGGTAACCCACCACGCAGA"
+# #     # y = "GCGCACGCATCGCACACGCCGGCGCCTTCCTTTGGGAGCCCGGGCCGGTGGCGCGGGCGCTCGGCAAATGGAGTGGGTGCTCGCGGAAGCGCTGCTCTCGCAGAGCCGGGACCCCCGGGCCCTGCTTGGGGCGCTGTGCCAAGGGGAGGCATCCGCGGAGCGCGTGGAGACGCTGCGCTTCCTTCTGCAGCGGCTCGAGGACGAGGAGGCGCGCGGCAGCGGGGGCGCAGGCGCGCTCCCGGAGGCGGCGCGCGAGGTGGCTGCAGGGTACCTCGTGCCACTGCTGCGGAGCCTGCGCGGACGCCCCGCGGGCGGCCCGGACCCCAGTCTGCAGCCTCGCCACCGCCGGCGCGTGCTGAGGGCGGCGGGCGCGGCCCTGCGCTCGTGCGTCCGCCTGGCCGGGCGTCCGCAGCTGGCGGCCGCGCTGGCTGAGGAGGCGCTGCGCGATCTGCTCGCCGGGTGGCGCGCGCCTGGCGCCGAGGCTGCCGTGGAAGTGCTAGCAGCCGTCGGGCCATGTTTGCGGCCCCGCGAGGACGGGCCGCTACTGGAGCGCGTGGCGGGGACCGCCGTCGCCCTGGCGCTGGGCGGGGGCGGGGACGGGGATGAGGCCGGGCCTGCCGAGGACGCGGCGGCGCTGGTGGCCGGGCGACTGCTGCCAGTGCTGGTCCAATGTGGCGGGGCGGCGCTGCGGGCCGTGTGGGGCGGGCTGGCCGCGCCTGGGGCGTCCCTGGGGTCCGGCCGCGTAGAGGAGAAGCTGCTGGTCCTGAGCGCCCTGGCCGAGAAGCTGTTGCCCGAGCCCGGCGGCGACCGCGCCCGCGGCGCGCGCGAGGCGGGCCCGGACGCCCGGCGCTGCTGGCGCTTCTGGAGGACGGTGCAGGCGGGGCTGGGCCAGGCGGACGCCCTGACGCGCAAGCGAGCGCGCTACCTGCTGCAGAGGGCGGTGGAGGTGTCGGCGGAGCTGGGGGCCGACTGCACCTGCGGGCCCCAGGAAGGAAACGGCCCAAGTCTGTTTTGGTGGTCTGAGAGGAAAAAAGATGAGCTTCTAAAGTTTTGGGAAAATTATATTTTAATTATGGAGACTTTAGAAGGAAATCAGATACATGTTATAAAGCCAGTTTTACCAAAGCTAAACAATCTGTTTGAATATGCGGTGTCAGAGGAAAATGGATGTTGGCTCTTTCACCCATCCTGGCATATGTGTATTTATAAAAGAATGTTTGAAAGTGAAAACAAAATCCTGTCCAAAGAAGGTGTTATCCATTTTTTGGAGCTGTATGAAACAAAGATTCTTCCATTTTCACCAGAATTTTCTGAGTTTATTATTGGACCATTAATGGATGCGCTTTCAGAGAGCTCTCTGTATAGCAGGTCCCCAGGCCAGCCAATAGGAAGCTGTTCTCCATTGGGACTGAAATTACAGAAGTTTTTAGTCACTTATATTTCTCTTCTTCCAGAAGAAATAAAGAGTAGCTTCCTATTGAAGTTTATTCGGAAGATGACAAGTAGGCATTGGTGTGCTGTTCCCATTTTGTTTCTATCTAAGGCTTTGGCAAATGTCCCAAGACATAAGGCCCTGGGTATAGATGGGCTTCTTGCTCTCAGGGATGTTATTCATTGCACTATGATCACACATCAGATTCTCCTGAGAGGGGCAGCCCAATGCTACCTTCTTCAAACAGCTATGAATTTGCTAGATGTGGAGAAAGTGTCACTTTCTGATGTCTCAACTTTTCTCATGTCTCTGAGACAAGAGGAATCCTTAGGACGAGGAACTTCATTGTGGACAGAGCTGTGTGACTGGCTACGTGTTAATGAAAGCTATTTTAAGCCATCCCCTACGTGTAGCTCCATTGGACTTCACAAGACATCTTTAAATGCTTATGTAAAGAGCATTGTTCAAGAGTATGTTAAGTCATCTGCTTGGGAAACAGGAGAAAACTGCTTTATGCCTGATTGGTTTGAAGCCAAGCTTGTTTCTCTGATGGTCTTGCTGGCTGTGGATGTGGAAGGAATGAAGACTCAGTATAGCGGAAAGCAGAGAACAGAGAATGTATTGCGGATATTCTTAGACCCTCTTCTGGATGTGCTTATGAAGTTTAGTACCAATGCCTACATGCCCTTGCTGAAGACTGACAGATGCCTCCAGCTGCTGTTGAAGCTGTTGAACACATGCAGGTTGAAAGGTTCCAGTGCCCAAGATGATGAGGTGTCTACTGTTCTTCAGAACTTTTTCATGTCTACTACAGAGAGCATTTCTGAATTTATTCTCAGAAGACTTACTATGAATGAGCTAAATAGTGTTTCAGATCTGGATCGTTGCCATTTATACCTGATGGTGTTAACTGAGCTTATAAATCTGCATTTGAAGGTTGGGTGGAAAAGGGGTAACCCTATCTGGAGAGTTATTTCTCTTTTGAAAAATGCATCCATTCAGCATCTTCAAGAGATGGACAGTGGACAGGAGCCAACAGTTGGAAGTCAGATTCAGAGAGTAGTGAGCATGGCTGCCTTGGCCATGGTGTGTGAGGCCATAGACCAGAAGCCTGAGCTGCAGCTGGACTCTCTCCATGCTGGGCCCCTGGAAAGCTTCCTTTCCTCTCTTCAGCTCAATCAGACGCTGCAGAAGCCCCACGCAGAGGAGCAGAGCAGTTATGCTCACCCCTTGGAGTGCAGCAGTGTTTTGGAAGAATCGTCATCTTCCCAAGGATGGGGAAAAATAGTTGCACAATATATTCATGATCAATGGGTGTGCCTCTCTTTCCTGTTGAAAAAATATCACACCCTTATACCAACCACAGGGAGTGAAATTCTGGAACCGTTTCTACCTGCCGTTCAGATGCCAATAAGGACTTTGCAGTCTGCACTAGAAGCCCTCACAGTTCTTTCTTCTGATCAAGTTTTACCAGTGTTCCATTGCTTGAAAGTGTTGGTTCCCAAGCTTCTGACTTCCTCTGAATCACTCTGCATAGAGTCTTTTGACATGGCGTGGAAAATTATATCTTCTTTAAGCAACACTCAGCTGATATTCTGGGCTAATTTAAAAGCTTTTGTTCAGTTTGTTTTTGATAACAAAGTTCTTACCATTGCTGCCAAAATCAAGGGCCAGGCATATTTCAAAATAAAAGAGATTATGTACAAGATAATTGAAATGTCTGCTATAAAGACTGGAGTCTTCAATACACTGATAAGTTACTGCTGTCAGTCTTGGATAGTGTCTGCTTCAAATGTGTCCCAAGGATCTTTATCAAGTGCTAAAAATTATAGCGAACTTATCCTTGAGGCTTGTATATTTGGAACTGTGTTTAGGCGTGATCAAAGTACTAAGAGAGAAGACCATTATGTGAGAATTTGTGCTGTCAAATTCCTGTGTTTATTAGATGGCTCCAATATGTCCCACAAGTTGTTTATTGAGGATCTTGCAATCAAGCTATTAGATAAAGATGAATTAGTGTCCAAGTCCAAAAAACGCTACTATGTGAATTCTCTACAGCACAGAGTGAAAAACCGAGTGTGGCAGACTCTGCTGGTACTTTTCCCTAGACTTGACCAGAATTTCTTGAATGGAATTATTGACAGGATTTTCCAGGCTGGTTTCACCAACAATCAAGCATCCATAAAATATTTTATAGAATGGATTATTATATTGATTCTTCATAAATTCCCTCAATTTCTTCCAAAGTTCTGGGATTGTTTTTCTTATGGTGAAGAAAATCTTAAAACAAGCATTTGTACGTTTTTAGCAGTTTTATCACATTTAGACATTATTACTCAAAATATTCCAGAAAAGAAACTAATTCTGAAGCAAGCCCTTATAGTTGTGCTGCAGTGGTGTTTCAATCACAATTTTAGTGTTCGACTGTATGCTTTAGTTGCTCTTAAGAAACTCTGGACTGTGTGTAAAGTGTTAAGTGTTGAAGAATTTGATGCCCTGACTCCTGTGATTGAATCCAGCCTCCATCAAGTGGAAAGCATGCACGGAGCAGGGAATGCCAAGAAGAATTGGCAACGCATTCAGGAGCATTTCTTTTTTGCAACATTTCACCCACTCAAGGATTATTGTCTAGAGACCATATTTTACATCCTTCCACGCCTTTCAGGCCTTATTGAAGATGAATGGATCACCATTGATAAATTTACCAGATTCACTGATGTTCCTTTAGCTGCGGGATTTCAGTGGTACCTTTCTCAAACTCAACTTAGTAAACTAAAACCAGGTGACTGGTCTCAGCAAGACATAGGTACTAATTTGGTCGAAGCAGATAACCAAGCGGAGTGGACCGACGTTCAGAAGAAGATTATCCCGTGGAACAGTCGTGTTTCCGACTTAGACCTGGAGCTCCTGTTTCAGGATCGTGCTGCCAGACTTGGAAAGTCAATTAGTAGACTCATCGTTGTGGCCTCGCTCATCGACAAACCGACCAATTTAGGAGGACTGTGCAGGACCTGTGAGGTATTTGGGGCTTCAGTGCTCGTTGTTGGCAGCCTTCAGTGTATCAGCGACAAACAGTTTCAGCACCTCAGTGTCTCTGCAGAACAGTGGCTTCCTCTAGTGGAGGTAAAACCACCTCAGCTAATTGATTATCTGCAGCAGAAGAAAACAGAAGGTTATACCATCATTGGAGTGGAACAAACTGCCAAAAGTTTAGACCTAACCCAATATTGCTTTCCTGAGAAATCTCTGCTCTTGTTGGGAAATGAACGTGAGGGAATTCCAGCAAATCTGATCCAACAGTTGGACGTTTGTGTGGAAATTCCTCAACAGGGCATTATCCGCTCCCTGAATGTCCATGTGAGTGGAGCCCTGCTGATCTGGGAGTACACCAGGCAGCAGCTGCTCTCGCACGGAGATACCAAGCCATGATGTGCCTTCCTTAGTGAACTGCTGCTGCTGTTCAGACTTTTTTAAAAAAAACTATTTGGACTAAAGAAACAGATTCTGAAATTTATTGTGATAATTTGTATTTCTTTTTTCTTGCAATTTAATGCCAAAAGTTTGCCATGTGCCTTAAACATATTACTATATATTTTCCCCTTTAATAAACACTTTTTGTTAAATTGTATTCTTCCTTTAATAAAATATTTTAAGCAATTGTGGAAATAAAA"
+# #     # z = "sequence_HL714398-BI-test-2022-02-05_21h47m23s927286ms.json"
 #     x ="C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\motifs\\una\\"
 #     y = "ACTGCAGATCATTCCCTGACCACAGAGCGCTGCTCCCGAGAACCCTGCACCCCTCAATGGAGTAAATTACCATAAAGCCTCTTCCTTACCCATGCTTTGGGGTGTTAACAGCTGAGGCTATTCGTCGGTGACCTGTGGGACTCGAGCTATTCCTGCAGCTCAGCAGACCTCCTGGCCGTGGCAGACTTCTGCGTTATGACCCGGCTGCTGGGCTACGTGGACCCCCTGGATCCCAGCTTTGTGGCTGCCGTCATCACCATCACCTTCAATCCGCTCTACTGGAATGTGGTTGCACGATGGGAACACAAGACCCGCAAGCTGAGCAGGGCCTTCGGATCCCCCTACCTGGCCTGCTACTCTCTAAGCGTCACCATCCTGCTCCTGAACTTCCTGCGCTCGCACTGCTTCACGCAGGCCATGCTGAGCCAGCCCAGGATGGAGAGCCTGGACACCCCCGCGGCCTACAGCCTGGGCCTCGCGCTCCTGGGACTGGGCGTCGTGCTCGTGCTCTCCAGCTTCTTTGCACTGGGGTTCGCTGGAACTTTCCTAGGTGATTACTTCGGGATCCTCAAGGAGGCGAGAGTGACCGTGTTCCCCTTCAACATCCTGGACAACCCCATGTACTGGGGAAGCACAGCCAACTACCTGGGCTGGGCCATCATGCACGCCAGCCCCACGGGCCTGCTCCTGACGGTGCTGGTGGCCCTCACCTACATAGTGGCTCTCCTATACGAAGAGCCCTTCACCGCTGAGATCTACCGGCAGAAAGCCTCCGGGTCCCACAAGAGGAGCTGATTGAGCTGCAACAGCTTTGCTGAAGGCCTGGCCAGCCTCCTGGCCTGCCCCAAGTGGCAGGCCCTGCGCAGGGCGAGAATGGTGCCTGCTGCTCAGGGCTCGCCCCCGGCGTGGGCTGCCCCAGTGCCTTGGAACCTGCTGCCTTGGGGACCCTGGACGTGCCGACATATGGCCATTGAGCTCCAACCCACACATTCCCATTCACCAATAAAGGCACCCTGACCCCAA"
-#     z = "sequences_['NM_007169.3']1-BI-test-2022-04-26_1h8m3s383518ms.json"
-#     align = Alineador(secuencia=y, tolerancia_atras=2, tolerancia_delante=2, json_patrones= os.path.join(x, z))
+#     # z = "sequences_['NM_007169.3']1-BI-test-2022-04-26_1h8m3s383518ms.json"
+#     z = "sequences_['NM_007169.3']0-BI-test-2022-05-08_19h58m27s248732ms.json"
+#     align = Alineador(secuencia=y, tolerancia_atras=2, tolerancia_delante=2, json_patrones= os.path.join(x, z), imprimir_logo=True)
 #     align.alineador()

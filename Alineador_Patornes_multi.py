@@ -9,7 +9,7 @@ from zipfile import ZipFile
 from graficador import Graficador
 from os.path import join, dirname, realpath
 from tqdm import tqdm
-
+import copy
 EXP_FOLDER = join(dirname(realpath(__file__)), 'experimentos')
 
 class Alineador_multi(object):
@@ -42,18 +42,19 @@ class Alineador_multi(object):
         
         # def buscar_motif_existente(motif = "", posiciones_esp = {}):
         #     return next((i for i, x in enumerate(list_info) if x["motif"] == motif and {j["secuencia"]: [k["posicion"] for k in x["alineamientos"] if j["secuencia"] == k["secuencia"] ] for j in x["alineamientos"]} == posiciones_esp), -1)
-
+    
+            
+        
         dict_json ={}
         list_info =[]
         
         for i in tqdm(range(len(patrones))):
-            x = []
-            for s in alineamientos[i].values():
-                x += s     
+            
+                
             # print(x)
             # print(type(alineamientos[i]))
             
-            df_conteos, df_info ,motif, exp_reg = self.obtener_motif(x, patrones[i])
+            df_conteos, df_info ,motif, exp_reg = self.obtener_motif([ali["alineamiento"] for ali in alineamientos[i]] , patrones[i])
             # print(patrones[i])
             if motif != "":
                 # existsPos = buscar_motif_existente(motif, posiciones_align[i])
@@ -61,12 +62,11 @@ class Alineador_multi(object):
                 # if existsPos == -1:
                 list_info.append({
                     "patron":patrones[i],
-                    "alineamientos": [{"secuencia": x1,
-                                    "alineamiento": y1,
-                                    "posicion": z1 }  
-                                    for x1 in alineamientos[i].keys()
-                                    for y,z in zip(alineamientos[i].items(), posiciones_align[i].items()) 
-                                    for y1, z1 in zip(y[1],z[1]) if (y[0] == x1 and z[0] == x1)
+                    "alineamientos": [{"secuencia": x1["secuencia"],
+                                    "alineamiento": x1["alineamiento"],
+                                    "posicion": y1["posicion"]}  
+                                    for x1, y1 in zip(alineamientos[i], posiciones_align[i])
+                                    if x1["secuencia"] == y1["secuencia"]
                                     ],
                     "matriz_conteo": json.loads(df_conteos.to_json(orient="index")),
                     "matriz_info": json.loads(df_info.to_json(orient="index")),
@@ -81,16 +81,18 @@ class Alineador_multi(object):
                 #     list_info[existsPos]["patron"] = patrones[i]
                 #     list_info[existsPos]["traduccion_aminoacido"] = aminoacidos[i]
 
-
-            
+        list_info.sort(key=lambda dicts: dicts["longitud_motif"], reverse=True)
         dict_json["Alineaciones"] = list_info
         dict_json["Num_alineaciones"] = len(list_info)
         # print(dict_json)
+        
+        
+        
         return dict_json
         
        
     def obtener_motif(self, alineamiento=[""], patron=""):
-        g = Graficador(alineamiento)
+        g = Graficador(alineamiento, self.imprimir_logo)
         df_conteos, df_info, motif, exp_reg = g.ploteo_logo_seq_align(patron)
         return df_conteos, df_info, motif, exp_reg
     
@@ -398,12 +400,11 @@ class Alineador_multi(object):
 
         #Formacion del nombre del archivo, tal como lo hace el server
         x = ""
-        x += "EXP_"+str(kargs['Siglas']) + '_' +\
-            str(kargs['Min_sup']) + '_' + \
-            str(kargs['Tipo_Entrada']) + '_' + \
-            str(kargs['Entrada']).replace(".fasta","") + '_' + \
-            str(kargs['Num_Sequencias_ananlizadas']) + '_' + \
-            str(kargs['Num_Patrones_hallados']) + '_'
+        x += "EXP_"+str(kargs['Entrada']).replace(".fasta","")+ '_' + \
+            str(kargs['Siglas']) + '_' +\
+            str(kargs['Min_sup']) + '_' 
+            # + \
+            # str(kargs['Num_secuencias_analizadas']) + '_' 
 
         dt = datetime.datetime.strptime(
             kargs['Fecha_Hora_Inicio'], '%Y-%m-%d %H:%M:%S.%f')
@@ -553,87 +554,48 @@ class Alineador_multi(object):
         except Exception as e:
             print(str(e))
             
-    def adiccion_frente_patron(self, patron_original = "", dict_posiciones = [{}]):
+    def adiccion_frente_patron(self, patron_original = "", dict_posiciones = []):
         i=0
         ban = True  # Ban restar la tolerancia
         ban_brk = True  # Ban para quebrar el while cuando: algunas de las posiciones llega al limite o las torelancia abaco
         pos_delante = self.tolerancia_delante  # tolerancia hacia delante
-        pre_ali = {}  # Prealineamiento
-        rec_ali = {}  # Record  de los alineamientos
+        pre_ali = []  # Prealineamiento
+        rec_ali = [ {"secuencia":d_pos["secuencia"], "alineamiento": patron_original} for d_pos in dict_posiciones] 
+        # rec_ali = {pi["secuencia"]: [patron_original for i in range(len(dict_posiciones))
+                                    #  if dict_posiciones[i]["secuencia"] == pi["secuencia"]] for pi in dict_posiciones}
+        # Record  de los alineamientos
         # Booleano para indicar que si el patron no cumple con una poscion menor a la longitud de la secuencia
-        brk_menor_seis = True
-        while(pos_delante > 0):  # Busqueda hacia delante
-            last_let = ""  # ultima letra
-            aux_let = ""  # letra aux -> letra actual
+        while(pos_delante >= 0):  # Busqueda hacia delante
+            # last_let = ""  # ultima letra
+            # aux_let = ""  # letra aux -> letra actual
             # Va por cada posicion en especifico del patron {secuencia: "", posicion}
-            patron_evaluar = patron_original
             
-            for pos in dict_posiciones: #info_patron["Posiciones"]:
-                # patron_evaluar = patron_original
+            for index, pos in enumerate(dict_posiciones): #info_patron["Posiciones"]:
                 
-                #Si la longitud del patron es menos a 6
-                # if len(patron_evaluar) < self.longitud_minina_cre and (pos["posicion"]-1)+self.longitud_minina_cre < len(self.secuencias[pos["sequencia"]])-1:
-                #     # Se le agregan otras seis posiciones
-                #     patron_evaluar = self.secuencias[pos["sequencia"]][(pos["posicion"]-1):(pos["posicion"]-1)+self.longitud_minina_cre]
-                # # si la longitud es menor a  6 pero la(s) posiciones
-                # elif (pos["posicion"]-1)+self.longitud_minina_cre >= len(self.secuencias[pos["sequencia"]])-1 and len(patron_evaluar) < self.longitud_minina_cre:
-                #     #Sino se rompe el ciclo
-                #     pos_delante = 0
-                #     ban = False
-                #     brk_menor_seis = False
-                #     break
-                
+                index_pos_delante = (pos["posicion"]-1)+len(patron_original)
                 # si la posicion no sobrepasa a longitud de la secuencia
-                if i+(pos["posicion"]-1)+len(patron_evaluar) <= len(self.secuencias[pos["sequencia"]])-1:
+                if i+index_pos_delante <= len(self.secuencias[pos["secuencia"]])-1:
                     if i == 0:  # Si el indicador es igual a cero
-                        # pre_ali.append(patron_evaluar+self.secuencias[(pos["posicion"]-1)+len(patron_evaluar)+i])
-                        # Si no esta la key de la secuencia en los prealineamientos
-                        if pos["sequencia"] not in pre_ali:
-                            # Si existe algo en el last_let (ultima letra)
-                            if last_let:
-                                aux_let = self.secuencias[pos["sequencia"]][(
-                                    pos["posicion"]-1)+len(patron_evaluar)+i]  # Debe de tomar la ultima letra el aux
-                            else:  # Si hay algo en en last_pre
-                                # last_let toma la ultima letra al ser la primera iteracion
-                                last_let = self.secuencias[pos["sequencia"]][(
-                                    pos["posicion"]-1)+len(patron_evaluar)+i]
+                            
+                            # Se añade la secuencia y la busqusda de los elemenetos frecuentes a pre_ali (prealineamiento)
+                        pre_ali.append(
+                            {"secuencia": pos["secuencia"], "alineamiento": self.secuencias[pos["secuencia"]][index_pos_delante]})
                         
-
-                            pre_ali[pos["sequencia"]] = [patron_evaluar+self.secuencias[pos["sequencia"]][(pos["posicion"]-1)+len(
-                                patron_evaluar)+i]]  # Se añade la secuencia y el patron a pre_ali (prealineamiento)
-                        else:  # Si ya existe el patron dentro de pre_ali
-                            pre_ali[pos["sequencia"]].append(patron_evaluar+self.secuencias[pos["sequencia"]][(
-                                pos["posicion"]-1)+len(patron_evaluar)+i])  # Agrega la poscion dentro de la lista correspondiente
-                            # Toma la letra siguiente al patron o alineamiento
-                            aux_let = self.secuencias[pos["sequencia"]][(
-                                pos["posicion"]-1)+len(patron_evaluar)+i]
-
                     else:  # Si el indicar no es igual a cero
                         # Se verifica que el key/codigo de la secuencia este en pre_ali, En caso de que exista
-                        if pos["sequencia"] in pre_ali:
-                            #Se agrega el patron a el alineamiento a la lista correspondiente
-                            pre_ali[pos["sequencia"]].append(patron_evaluar+self.secuencias[pos["sequencia"]][(
-                                pos["posicion"]-1)+len(patron_evaluar):(pos["posicion"]-1)+len(patron_evaluar)+i+1])
-                            #Se toma la ultima leta para aux_let que le quiere agregar al patron desde la secuencia y poscion especifica
-                            aux_let = self.secuencias[pos["sequencia"]][(
-                                pos["posicion"]-1)+len(patron_evaluar)+i]
-                            #Nota: La pos["posicion"] se le resta -1 porque es la que se muestra al usuario
-                        else:  # no esta el codigo de la secuencia en pre_ali
-                            #Se añande la key y la lista de poscion con el primer elemento
-                            pre_ali[pos["sequencia"]] = [patron_evaluar+self.secuencias[pos["sequencia"]][(
-                                pos["posicion"]-1)+len(patron_evaluar):(pos["posicion"]-1)+len(patron_evaluar)+i+1]]
+                        if len(pre_ali) == 0 or len(pre_ali) != len(rec_ali):
+                                # Se añade la secuencia y la busqusda de los elemenetos frecuentes a pre_ali (prealineamiento)
+                            pre_ali.append(
+                                {"secuencia": pos["secuencia"], "alineamiento": self.secuencias[pos["secuencia"]][index_pos_delante+i]})
+                        else:
+                            
+                            pre_ali[index]["alineamiento"] = pre_ali[index]["alineamiento"] + \
+                                self.secuencias[pos["secuencia"]
+                                                ][index_pos_delante+i] #Se añade el siguiente nucleotido a la busqueda 
+                                 
 
-                            if last_let:  # si hay algo en last_let
-                                #Se toma la letra seguiente al patron/alineacion dentro de la secuencia especifico
-                                aux_let = self.secuencias[pos["sequencia"]][(
-                                    pos["posicion"]-1)+len(patron_evaluar)+i]
-                            else:  # En caso que no tenga nada last_let
-                                #Se toma la letra seguiente al patron/alineacion dentro de la secuencia especifico
-                                last_let = self.secuencias[pos["sequencia"]][(
-                                    pos["posicion"]-1)+len(patron_evaluar)+i]
-
-                    if aux_let != "":  # Si  aux_let es diferente a nada
-                        if last_let != aux_let:  # Si aux_let y last_let son diferentes
+                    if len(pre_ali) > 1:
+                        if len(pre_ali[0]["alineamiento"]) == len(pre_ali[index]["alineamiento"]) and pre_ali[0]["alineamiento"][-1] !=  pre_ali[index]["alineamiento"][-1] :  # Si el primer nucleotido y el sig de acuerdo al index son diferentes 
                             ban = False  # Se activa el ban, que indica que TODAS las letas que se agregan al patron no son iguales
                             #Ej
                             #Columna 1  Columna 2
@@ -644,17 +606,8 @@ class Alineador_multi(object):
                             #   A           A
                             #No se activa ban en la columna uno
                             #Se activa en la columna dos porque todas las letras no so iguales
-                        else:  # En caso de que sean iguales
-                            #remplaza lo que tenga last_let con aux_let
-                            last_let = aux_let
-                            #se limpia aux_let
-                            aux_let = ""
 
-                    # if len(pre_ali)> 1:
-                        # print(pre_ali.values())
-                        # print(list(pre_ali.values())[0][0][-1])
-                        # if list(pre_ali.values())[0][0][-1] != list(pre_ali.values()[-1][0][-1]):
-                            #
+
                 else:  # Si sobre pasa la poscion del patron/alineacion la longitud de la secuencia
                     # Las posiciciones hacia delante es igual a 0 (Ya no se añande nada)
                     pos_delante = 0
@@ -662,12 +615,9 @@ class Alineador_multi(object):
                     ban_brk = False  # Ban_brk es igual a False, por ende, se rompe el while
                     break  # Se romple el ciclo de las posiciones
                 
-                patron_evaluar = patron_original
+
                     
             if ban_brk == False:
-                if len(rec_ali) == 0: # En caso de que rec_ali no tenga nada que retornar
-                    rec_ali = { pi["sequencia"]: [ patron_evaluar for i in range(len(dict_posiciones)) 
-                                              if dict_posiciones[i]["sequencia"] == pi["sequencia"] ] for pi in dict_posiciones}
                 break  # Romple el ciclo while
 
             if ban == False:
@@ -675,154 +625,91 @@ class Alineador_multi(object):
                 pos_delante -= 1
             else: #incremento si encuenta algun patorn    
                 pos_delante = self.tolerancia_delante
+                rec_ali = [ {"secuencia":r_ali["secuencia"], "alineamiento": r_ali["alineamiento"] + p_ali["alineamiento"] } for r_ali, p_ali in zip (rec_ali, pre_ali) if r_ali["secuencia"]==p_ali["secuencia"] ]
+                pre_ali.clear()
             
-            if brk_menor_seis == False: #si es menor a seis
-                #mandamos 
-                rec_ali = { pi["sequencia"]: [ patron_evaluar for i in range(len(dict_posiciones)) 
-                                              if dict_posiciones[i]["sequencia"] == pi["sequencia"] ] for pi in dict_posiciones}
-                
-                break
-
+            
             #Si no hay anomalias
             i += 1  # Se suma i indicador de posiciones
-            rec_ali.clear()  # Se limpia rec_ali
-            rec_ali = pre_ali.copy()  # Se compia el contenido de pre_ali y se pasa rec_ali
-            pre_ali.clear()  # Se limpia pre_ali
+
 
         return rec_ali
     
     
     
-    def adiccion_atras_patron(self,  dict_alineaciones = {}, dict_posiciones = {}):        
+    def adiccion_atras_patron(self,  dict_alineaciones = [], dict_posiciones = []):        
         #------------------------------------------------------------------------------------
         #SEGUNDA FASE: SE AGREGAN LETRAS HACIA ATRAS DE LOS PATRONES
         #----------------------------------------------------------------------------------
         # indicador i igual a 1 (Ahora para recortar posiciones hacia atras)
         i = 1
-        pre_ali = dict_alineaciones  # copiamos lo que tiene rec_ali a pre_ali. Cambiamos el rol, ahora rec_ali va ir ciclo por ciclo para recolectar los patrones y pre_ali los resguarda
-        rec_ali = {}  # se limpia rec_ali
-        aux = {}  # diccionario auxiliar -> aqui le pontran todas las alineacion resultantes de cada ciclo
-        new_posiciones = {} #las nuevas posiciones con respeocto
+        pre_ali =  [] # copiamos lo que tiene rec_ali a pre_ali. Cambiamos el rol, ahora rec_ali va ir ciclo por ciclo para recolectar los patrones y pre_ali los resguarda
+        rec_ali = copy.deepcopy(dict_alineaciones) # se limpia rec_ali
+        aux_pos = [] # diccionario auxiliar -> aqui le pontran todas las alineacion resultantes de cada ciclo
+        new_posiciones = [{"secuencia": dp["secuencia"], "posicion": dp["posicion"]-1}
+                          for dp in dict_posiciones]  # las nuevas posiciones con respeocto
         pos_atras = self.tolerancia_atras  # tolerancia hacia atras
         ban = True  # Ban restar la tolerancia
         ban_brk = True  # Ban para quebrar el while cuando: algunas de las posiciones llega al limite o las torelancia abaco
-        brk_menor_seis = True # Ban para romper el ciclo si el patron es menor a seis
+        # brk_menor_seis = True # Ban para romper el ciclo si el patron es menor a seis
         #Nota: Ban de Bandera, no se porque tengo esa concepcion
-        while(pos_atras > 0):  # Si la posicion hacia atras de mayor a 0
-            fst_let = ""  # Se limpia la primera letra
-            aux_let = ""  # Se pondran todas las
-            for key, pos in dict_posiciones.items():  # se recorren cada key(codigo de la secuencia) y la lista posiciones
-                for k in range(len(pos)):  # se recorre la lista en base a si index
-                    alineamiento = pre_ali[key][k] # se toma el patron alineado compuesto
-                    pos_align = pos[k]
-                    #Crecimiento para igual la longitud minima
-                    #Si la posicion menos las pociones hacia atras que necesite el patron/secuencia alineada para llegar a una longitud de 6 y si el mismo patron/secuencia es menor a seis 
-                    # if pos_align-(self.longitud_minina_cre-len(alineamiento)) > 0 and len(alineamiento) < self.longitud_minina_cre:
-                    #     # Si es menor a 6, se le acompletara con las letras detras del patron hasta llegar a 6
-                    #     # Primero toma la posicion modificada
-                    #     pos_align = pos[k] - \
-                    #         (self.longitud_minina_cre-len(alineamiento))
-                    #     alineamiento = self.secuencias[key][pos_align:pos[k]] + str(alineamiento) # y despues el nuevo alineamiento
-                        
-                        
-                    # #Si la posicion menos las pociones hacia atras que necesite el patron/secuencia alineada para llegar a una longitud de 6 y si el mismo patron/secuencia es menor a seis
-                    # elif pos_align-(self.longitud_minina_cre-len(alineamiento)) <= 0 and len(alineamiento) < self.longitud_minina_cre:
-                    #     pos_atras = 0
-                    #     brk_menor_seis = False
-                    #     break 
-                    
-                    if (pos_align-i >= 0):  # Si la posicion menos el indicador sea mayores a 0    
-                        if i == 1:  # si es igual a 0
-                            #*Actualizacion de posciones y alineamientos*
-                            if key not in rec_ali:  # si la key de la secuencia no esta em rec_ali
-                                if fst_let:  # si fst_let tiene algo
-                                    # Se obtiene la letra anterior al patron
-                                    aux_let = self.secuencias[key][pos_align-i]
-                                else:
-                                    # Se obtiene la letra anterior al patron
-                                    fst_let = self.secuencias[key][pos_align-i]
+        while(pos_atras >= 0):  # Si la posicion hacia atras de mayor a 0
+            
+            for index, pos in enumerate(new_posiciones):  # se recorren cada key(codigo de la secuencia) y la lista posiciones # se recorre la lista en base a si index
 
-                                # Se guarda la key de la secuencia y la posicion
-                                rec_ali[key] = [self.secuencias[key][pos_align-i]+alineamiento] 
-                                # Se agrega la key y la lista con la primera posicion conocida
-                                new_posiciones[key] = [pos_align-1]
+                if (pos["posicion"]-1 >= 0):  # Si la posicion menos el indicador sea mayores a 0    
+                    if i == 1:  # si es igual a 0
+                        # Se guarda la key de la secuencia y la posicion
+                        pre_ali.append({"alineamiento":self.secuencias[pos["secuencia"]][pos["posicion"]-1] , "secuencia":pos["secuencia"]}) 
+                        # Se agrega la key y la lista con la primera posicion conocida
+                        new_posiciones[index]["posicion"] = new_posiciones[index]["posicion"]-1
                             
-                            else:  # si ya esta la key dentro de rec_ali
-                                # se agrega a la lista dependiendo del codigo en espeficio
-                                rec_ali[key].append(self.secuencias[key][pos_align-i]+alineamiento)    
-                                # Se agrega la posicion con la key correspondiente
-                                new_posiciones[key].append(pos_align-1)
-                                # se obtiene la letra anterior al patron o alineamiento
-                                aux_let = self.secuencias[key][pos_align-i]
-                                
 
-                            # new_posiciones.append(posiciones[k]-1)
-                        else:  # Si es diferente a 1
-                            if key not in rec_ali:  # si la key no esta dentor de rec_ali
-                                # Se guarda la key de la secuencia y la posicion actualizada
-                                rec_ali[key] = [
-                                    self.secuencias[key][pos_align-i:pos_align]+alineamiento]
+                        # new_posiciones.append(posiciones[k]-1)
+                    else:  # Si es diferente a 1
+                        
+                        # Se guarda la key de la secuencia y la posicion actualizada
 
-                                if fst_let:  # Si fst_let si tiene algo
-                                    # aux_let se toma ultima letra insertada
-                                    aux_let = self.secuencias[key][pos_align-i]
-                                else:  # Si no tiene
-                                    # fst_let toma la ultima letra insertada atras
-                                    fst_let = self.secuencias[key][pos_align-i]
-                            else:  # si esta la key de la secuencia
-                                # se agrega a la lista dependiendo del codigo en espeficio
-                                rec_ali[key].append(
-                                    self.secuencias[key][pos_align-i:pos_align]+alineamiento)
-                                # aux_let se toma ultima letra insertada
-                                aux_let = self.secuencias[key][pos_align-i]
+                        if len(pre_ali) == 0 or len(pre_ali) != len(rec_ali):  
+                            pre_ali.append(
+                                {"alineamiento": self.secuencias[pos["secuencia"]][pos["posicion"]-1], "secuencia": pos["secuencia"]})
+                        else:  
+                            #Se añade el siguiente nucleotido a la busqueda 
+                            pre_ali[index]["alineamiento"] = self.secuencias[pos["secuencia"]][pos["posicion"]-1] + pre_ali[index]["alineamiento"]
+                        
+                        # Se agrega la posicion con la key correspondiente
+                        new_posiciones[index]["posicion"] = new_posiciones[index]["posicion"]-1
 
-                            # Se agrega la posicion con la key correspondiente
-                            new_posiciones[key][k] = new_posiciones[key][k]-1
+                    # if len(rec_ali) > 1:
+                    #     if rec_ali[0][0] != rec_ali[-1][0]:
+                    #         ban = False
+                    # else:
+                    if len(pre_ali[0]["alineamiento"]) == len(pre_ali[index]["alineamiento"]) and pre_ali[0]["alineamiento"][0] !=  pre_ali[index]["alineamiento"][0]:  # Si  aux_let es diferente a nada
+                        ban = False  # Se activa el ban, que indica que TODAS las letas que se agregan al patron no son iguales
+                        #Ej
+                        #Columna 1  Columna 2
+                        #   A           C
+                        #   A           T
+                        #   A           G
+                        #   A           C
+                        #   A           A
+                        #No se activa ban en la columna uno
+                        #Se activa en la columna dos porque todas las letras no so iguales
 
-                        # if len(rec_ali) > 1:
-                        #     if rec_ali[0][0] != rec_ali[-1][0]:
-                        #         ban = False
-                        # else:
-                        if aux_let != '':  # Si  aux_let es diferente a nada
-                            if fst_let != aux_let:  # Si aux_let y last_let son diferentes
-                                ban = False  # Se activa el ban, que indica que TODAS las letas que se agregan al patron no son iguales
-                                #Ej
-                                #Columna 1  Columna 2
-                                #   A           C
-                                #   A           T
-                                #   A           G
-                                #   A           C
-                                #   A           A
-                                #No se activa ban en la columna uno
-                                #Se activa en la columna dos porque todas las letras no so iguales
-                            else:  # En caso de que sean iguales
-                                #remplaza lo que tenga last_let con aux_let
-                                fst_let = aux_let
-                                #se limpia aux_let
-                                aux_let = ""
+                    # else:
 
-                        # else:
+                    #     aux_let = ""
 
-                        #     aux_let = ""
-
-                    else:  # Si el indicador es menor 0
-                        pos_atras = -1  # pos_atras menos
-                        ban = False  # booleano para romper el ciclo for interno
-                        ban_brk = False  # booleano para rompper el ciclo while
-                        break
-                    
-                    
-                if brk_menor_seis == False:  # si el patron es menor a 6
+                else:  # Si el indicador es menor 0
+                    pos_atras = -1  # pos_atras menos
+                    ban = False  # booleano para romper el ciclo for interno
+                    ban_brk = False  # booleano para rompper el ciclo while
                     break
+                    
+                    
+                
 
             if ban_brk == False:  # si ban_brk es falso
-                if len(aux) == 0:  # En caso de que rec_ali no tenga nada que retornar
-                    #se mandan las mismas posiciones y alineaciones de entrada
-                    aux.clear
-                    aux = dict_alineaciones.copy()
-                    new_posiciones.clear
-                    new_posiciones = dict_posiciones.copy()
-
                 break  # break al while funcional
 
             if ban == False:  # si ban es False
@@ -830,23 +717,24 @@ class Alineador_multi(object):
                 pos_atras -= 1  # pos_atras menos unos
             else:
                 pos_atras = self.tolerancia_atras
+                aux_pos.clear()
+                aux_pos = copy.deepcopy(new_posiciones)
+                rec_ali = [{"secuencia": r_ali["secuencia"], "alineamiento": p_ali["alineamiento"]+r_ali["alineamiento"] }
+                           for r_ali, p_ali in zip(rec_ali, pre_ali) if r_ali["secuencia"] == p_ali["secuencia"]]
+                pre_ali.clear()
 
-            if brk_menor_seis == False:  # si el patron es menor a 6
-                #se mandan las mismas posiciones y alineaciones de entrada
-                aux.clear
-                aux = dict_alineaciones.copy()
-                new_posiciones.clear
-                new_posiciones = dict_posiciones.copy()
-                break
             
-            aux.clear()  # limpia el auxiliar
-            aux = rec_ali.copy()  # aux guarda lo que tenga rec_ali
-            rec_ali.clear()  # limpia lo que tenga rec_ali
 
             i += 1  # aumenta mas uno el indicardor
         
+        if len(aux_pos) == 0:  # En caso de que aux_pos no tenga nada que retornar
+                    #se mandan las mismas posiciones y alineaciones de entrada
+                    aux_pos.clear()
+                    aux_pos = [{"secuencia": dp["secuencia"], "posicion": dp["posicion"]-1}
+                               for dp in dict_posiciones]
+        
         #Retorno de resultados
-        return aux, new_posiciones
+        return rec_ali, aux_pos
 
                 
     def extraccion_json(self):
@@ -870,24 +758,26 @@ class Alineador_multi(object):
         
         for info_patron in tqdm(patrones["Patrones"]):
             rec_ali = {} #Record  de los alineamientos
-            # posiciones = {p["sequencia"]: [p["posicion"]] if p["sequencia"] is posiciones else p["sequencia"].append(p["posicion"]) for p in info_patron["Posiciones"]}  # [p["posicion"]-1 for p in info_patron["Posiciones"]]
-            posiciones = {p["sequencia"]: [ pj["posicion"]-1 for pj in info_patron["Posiciones"] if pj["sequencia"] == p["sequencia"]] for p in info_patron["Posiciones"]}  # [p["posicion"]-1 for p in info_patron["Posiciones"]] #Obtenermos las posiciones
-            
+            # posiciones = {p["secuencia"]: [p["posicion"]] if p["secuencia"] is posiciones else p["secuencia"].append(p["posicion"]) for p in info_patron["Posiciones"]}  # [p["posicion"]-1 for p in info_patron["Posiciones"]]
+            # posiciones = {p["secuencia"]: [ pj["posicion"]-1 for pj in info_patron["Posiciones"] if pj["secuencia"] == p["secuencia"]] for p in info_patron["Posiciones"]}  # [p["posicion"]-1 for p in info_patron["Posiciones"]] #Obtenermos las posiciones
+            # if info_patron["Patron"] in ["AGTGA", "AGTGAT", "GTGAT", "GTGATG"]:
+            #     print("--")
             #PRIMER FASE: ADICIÓN DE LETRAS HACIA DELANTE DE LOS PATRONES
             rec_ali = self.adiccion_frente_patron(info_patron["Patron"], info_patron["Posiciones"])
             #print("Primera Fase: ",rec_ali)
             
-            if len(rec_ali) == len(posiciones): #Si la longitud de rec_ali es igual al de las posiciones
+            if len(rec_ali) == len(info_patron["Posiciones"]): #Si la longitud de rec_ali es igual al de las posiciones
                 
                 #SEGUNDA FASE: ADICION DE LETRAS HACIA ATRAS DE LOS PATRONES
-                aux, new_posiciones = self.adiccion_atras_patron(rec_ali, posiciones)
+                aux, new_posiciones = self.adiccion_atras_patron(rec_ali, info_patron["Posiciones"])
                 # print("Segunda Fase",aux,"\n",new_posiciones,"\n")
-                
-                if (len(aux) == len(rec_ali)) and (len(new_posiciones) == len(posiciones)): #Si las longitudes de las alienaciones de enfrente son iguales a las de atras 
+            
+                # Si las longitudes de las alienaciones de enfrente son iguales a las de atras
+                if (len(aux) == len(rec_ali)) and (len(new_posiciones) == len(info_patron["Posiciones"])):
                     # print(aux.copy()) #imprime lo que tienes de las alienaciones completas
                     # el patron alineado es mayor a 6 nucleotidos or es un multiplo de 3
                     # or (len(list(aux.values())[0][0]) % 3 == 0):
-                    if(len(list(aux.values())[0][0]) >= self.longitud_minina_cre):
+                    if(len(aux[0]["alineamiento"]) >= self.longitud_minina_cre):
                         cla = comprobar_lugar_alineaciones(new_posiciones) #Se compueban las alineaciones para evitar redundancia en las posiciones y por ende los patrones
                         #para ello cla indicara el lugar de la redundancia
                         if cla == -1: #si no existen esas posiciones 
@@ -903,14 +793,14 @@ class Alineador_multi(object):
                 else: #sino
                     # print(pre_ali.copy()) #imprime lo resultante de enfrente                                    if((aux.get.values()[0][0]) >= 6) or ((aux.get.values()) % 3 == 0):
                     # or (len(list(rec_ali.values()[0][0])) % 3 == 0):
-                    if(len(list(rec_ali.values()[0][0])) >= self.longitud_minina_cre):
+                    if(len(rec_ali[0]["alineamiento"]) >= self.longitud_minina_cre):
                         # Se compueban las alineaciones para evitar redundancia en las posiciones y por ende los patrones
-                        cla = comprobar_lugar_alineaciones(posiciones)#Se compueban las alineaciones para evitar redundancia en las posiciones y por ende los patrones
+                        cla = comprobar_lugar_alineaciones(info_patron["Posiciones"])#Se compueban las alineaciones para evitar redundancia en las posiciones y por ende los patrones
                         #para ello cla indicara el lugar de la redundancia
                         if cla == -1: #si no existen esas posiciones 
                             alineamiento_retorno.append(rec_ali.copy()) #copialo a la lista grande
                             #quedate con las posiciones originales
-                            list_posiciones.append(posiciones) 
+                            list_posiciones.append(info_patron["Posiciones"])
                             # Agrega al patron
                             list_patrones.append(info_patron["Patron"])
                             list_animoacidos.append(info_patron["Traduccion_aminoacido"])
@@ -925,11 +815,12 @@ class Alineador_multi(object):
                 # or (len(info_patron["Patron"]) % 3 == 0)):
                 if (len(info_patron["Patron"]) >= self.longitud_minina_cre):
                     # Se compueban las alineaciones para evitar redundancia en las posiciones y por ende los patrones
-                    cla = comprobar_lugar_alineaciones(posiciones)
+                    cla = comprobar_lugar_alineaciones(
+                        info_patron["Posiciones"])
                     #para ello cla indicara el lugar de la redundancia
                     if cla == -1: #si no existen esas posiciones 
                         alineamiento_retorno.append(info_patron["Patron"])
-                        list_posiciones.append(posiciones)
+                        list_posiciones.append(info_patron["Posiciones"])
                         list_patrones.append(info_patron["Patron"])# Agrega al patron
                         list_animoacidos.append(info_patron["Traduccion_aminoacido"])
                 else:
@@ -957,18 +848,12 @@ class Alineador_multi(object):
 # if __name__ == '__main__':
 #     # x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud diferente\\"
 #     #x = "C:\\Users\\sobre\\Desktop\\"
-#     x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\motifs\\multi\\json\\"
-#     y = {"MN273335.1": "ACCCCCGTCCCGGGATCAGAGTCACGTACGGTTATCATATGGACCATTGGATCAAAAGGACACGTGTTCGATCAGGATCTGTGATTCGTTCAACGAATCTGACGGAAGATCGTACACTTTATGCTTTTACGCGTGGCAAGCTGTTATTGGTTCTTTAAGGCGTCGTTGCTTTTTTCACGCGTTTTCTTTTTGCGCCGTTGTTTTGGCAGCTGGAAAGCATATGCTTTCCTTAGCTGTTAAGTATTTTTTTTTGTGGTGTGCATACGAAGCTTCGTTTGAGTTTGCCTATAAATAACAGTGCATCGTCTTCAACCTCATACACAACCATGGCTGAGTGGTTTTCAAGTCCTGTGAAAACATGTACACATGTTTGTGACTTTCCTTCTCTCTCTTCTTCTTCTACTGAGCAACAAATAAGGTGTTGTGATACTATGAAGGACAAGTTGCAAGATTCAAGGAGGGTGTTGCTCGTAAGTTGCAGTGTCAGCTTCAATGGCAGTTTCTATGGAGGTAATAGGAATGTTCGTGGTCAACTGCAACTATCAATGGAGGAAGACGATGGTGTTCTTAGACCAATTGGATTTATTCCAATTGGAGGTTATTTGTACCATAATGATTATGGGTATTATCAAGGTGAGAAGACATTTAATCTGGATGTGGAGTCTCAATACTTGAAGGCAGATGAAGATTACAACAAACTGTTCGTGGTAAATATTTTGAATGAAAATGGATTAGATGATAGATGTGATTTGAAGGTGTTTGTTGTTCATACACTTAGAATCAAGGTGTAATTAGTACATCAGTGTAATTAATGTTAATTAATGAATATTTATTATTTTAAGTGTTGTTAATGAATATAATTATTGATTGATATTGTTTTTAATAACTCCGCGAAGCGATATGGATCAGCCCAATAGGCCCAATAGTTAATAGGCCCAATATAAATGGGGATCAGCTGACGTCAGCTGATCCCGTGACAGCCTGGGACGGGGCTTAGTATT",
-#          "MN273334.1": "ACCCCCGCCCCAGGATCAGCGGAGTCATCACGTGACTCCCACGTGCTTTGTGCGTGAACTGTAGCGTGTAGGGTCCCACATACGCACTAACTGAACAACGTTGTGAGGACGACGAATACTTCGTCGTGAAGTAAAGTAAACCCACTTCAGTGGGTTTGCTTTATACTTTATTCGTTGTTTGTTGCTTTTGAATGAATGGCTCAGATTGAATCTAAATTAATGCGTACATGGTACGCCTTGTTGTGTGGTGATTATAAATAGCGAGTGGTTCTGAAATTGAATCATCGTCTTCCTCTTCTCACCTGCTTCGTTTGTTTAATTGTTCCATTATAATATTCATTTTAATGGGGGATCAAGGTCAAGGTTATTATGCAGGTTATCAAGCAGACGATGAGGGACAATCATCCAATAATCACCAGGTATTAAATATTATAGGTATAGTATTATTAATAATACTATGTATTAGTGGTATCTGGGTTTGTATTATGTTAGCCTGTTATATACCTGGGTTTGTTAAGAAGACATTAGATGCTTGGTTAAGTTCATCATCAATTATGAAGAGGAGGTTAGCTGCTACTATAACAAGAACACCATATGAAGAAACAGGCCCTGAGAGAGAAAGAAGATGGAGTGCTAGAAGGAATCAAGCTGAAGGAGGTGTTCAAGGGAATAATAATGCTTCTGGGTTTAGTTAGTTAGGTAGTTTGTGTTCTTGTAATTGTCAACATCAGTATGTAATGATTCAAGGAATTAATAAAATATTATTTTATTAATGTGTTGTAGTTGTTTGTTATGTTGTTCTTTGTTGAATAATGTTTATGTGTAAGGAAGACGATGATGAATAATAAGAATATGTTGTTTTTGATTTTAAAACTCCGCGAAGCGGTATGGTTCGGTGTTTGTGTTGACATATATGCCCTTCATTAATGAAGGGGTAATGTCCAAATTACCCCTTGTGACGTCATTTGATCCCGTGCTGAGCTGGGGCGGGGCTTAGTATT",
-#          "MN273324.1": "ACCCCCGTCCCGGGATCAGAGTCACGTACGGTTATCATATGGACCATTGGATCAAAAGGACACGTGTTCGATCAGGATCTGTGATTCGTTCAACGAATCTGACGGAAGATCGTACACTTAATGCTTTTACGCGTGGCAAGCTGTGATTGGTTCTTTAAGGCGACGTTGCTTTTTTCACGCGCTTTCTTTTTGCGCCGTTGTTTTGGCAGCTGGAAAGCATATGCTTTCCTTAGCTGTTAAGTATTTCTTTTTGTGGTGTGCATAGGAAGCTTCGTGTGAGTTTGCCTATAAATAACAGTGCATCGTCTTCAACCTCATACACAACCATGGCTGAGTGGTTTTCAAGTCCTGTGAAAACATGTACACATGTTTGTGACTTTCCTTCTCTCTCTTCTTCTTCTACTGAGCAACAAATAAGGTGTTGTGATACTATGAAGGACAAGTTGCAAGATTCAAGGAGGGTGTTGCTCGTAAGTTGCAGTGTCAGCTTCAATGGTAGTTTCTATGGAGGTAATAGGAATGTTCGTGGTCAACTGCAACTATCAATGGAGGAAGACGATGGTGTTCTTAGACCAATTGGATTTATTCCAATTGGAGGTTATTTGTACCATAATGATTATGGGTATTATCAAGGTGAGAAGACATTTAATCTGGATGTGGAGTCTCAATACTTGAAGGCAGATGAAGATTACAACAAACTGTTCGTGGTAAATATTTTGAATGAAAATGGATTAGATGATAGATGTGATTTGAAGGTGTTTGTTGTTCATACACTTAGAATCAAGGTGTAATTAGTACATCAGTGTAATTAATGTTAATTAATGAATATTTATTATTTTAAGTGTTGTTAATGAATATAATTATAGATTGATATTGTTTTTAATAACTCCGCGAAGCGGTATGGATCAGCCCAATAGGCCCAATAGTTAATAGGCCCAATATAAATGGGGATCAGCTGACGTCAGCTGATCCCGTGACAGCCTGGGACGGGGCTTAGTATT",
-#          "LC521492.1": "GAGAGGCGGCATAGTATTACCCGCCTCTCATCCCTCACCTTTCATCCCGGTCCCACCATGCCAACTGTGCAATCCACTTGTTGGGTGTTCACACTTAACTTTAAAGGCGAAATTCCTATTTTGCCCTTTAATGACCGCGTTCAGTACGCCTGTTGGCAACACGAAAGAGTGGGCCATGACCATTTACAGGGCTTTATTCAGATGAAGGCCCAACAATCTTTGGGCCAAATGAAGGCCATTATTCCTGGAGCCCATTTTGAGAAAATGAGGGCATTAAATACAGACCAGGCTAAGGCTTACGCTATGAAGGAAGACACACGAATAGAAGGACCATGGGAGTATGGTTTATACATTAAGAAGGGATCGCATAAGAGAAAAATTATGGAGCGATTTGAAGATGACCCAGAAGAAATGAAGATTGAAGATCCCTCACTATATCGTCGGTGTTTATCAAGGAAGATGACAGAAGAACAACGATCAACTGCAGAGTGGAATTACGACATGAGGCCATGGCAAGACCAAGTCATACAAGAGATAGAAGAGACACCTGATTACCGAAAGATTATCTGGGTTTACGGCCCCAAAGGAGGTGAAGGAAAGAGTACGTTTGCCAGGTACCTTTCACTCAAACAAGGTTGGGGTTATTTACCTGGTGGTAAGACGCATGACATGATGCATATCATCAGTGGAGAACCGAAGAACAACTGGGTCTTTGACATCCCAAGAGTAGCGTCTGAGTATGTGAACTATGGTGTATTAGAGCAGGTTAAAAATAGAGTTATGGTTAATACTAAGTACGAGCCAATAGTAATTAGGGATGATAATCATCCTGTTCATGTAATTGTGTTTGCTAATTGTATGCCAGACTTCACAAAAATAAGTGAAGATCGAATGAAAATAGTCCATTGTTAAGAAATATGTTGTTTTTGAAATTACGCGAAGCGAAGTCCCACATCGAATAGGTTGGAGAACTGAGCGAGGGATGAAAGCAATAAATAGG",
-#          "MN273341.1": "ACCCCGCCTTGGAACACCTCCTTGGAACGGGTATAAAAATAAATGAAAAATAAAATTAATTAATGGCTTGTGCGAATTGGGTTTTCACGCGTAACTTTGAAGGTGCTCTCCCTTCTCTCTCGTTCGACGAGAGAGTTCAATATGCATCCTGGCAACATGAGAGAGGATCACATGATCATATCCAGGGAGTAATTCAACTGAAGAAGAAGGCAAGAATATCAACTGTGAAGGAGTTAATTGGTGGAAATCCTCATCTGGAGAAGATGAAGGGTACAATTGAAGAAGCTACTGCTTATTCCCAGAAAGAAGAAACACGAGTTGCAGGTCCATGGAGTTATGGGGAAATTTTAAAGAAAGGAAGTCATAAGAGGAAGACGATGGAGAGATACTTAGAAGATCCAGAAGAAATGAGATTGAGGGATCCTGATACTGCTCTTCGATGTAAGGCGAAGAAATTAAAGGAAGAATATTGTTCTTCCTTTTCTGGGTTCAAGCTTCGTCCATGGCAGGTTGAGCTTCATAGAGCTTTAATGGCAGAACCAGACAACCGGACAATTATCTGGGTTTATGGTCCTGATGGAGGAGAAGGAAAATCAACGTTTGCTAAGGAATTAATTAAATATAATTGGTTTTATTCAGCAGGAGGGAAGACTCAAGACGTTCTGTATATGTATGCACAAGATCCAGAAAGAAATATTGCCTTTGATGTGCCCAGATGTTCTTCGGAGATGATGAACTATCAAGCGATGGAGATGATGAAAAATAGATGCTTTGCAAGTACAAAATATAGGCCCGTAGATCTTTGTGTTATGAAAAATGTACATTTAATTGTGTTTGCCAACGTGGCACCGGACCCCACAAAAATAAGTGAGGACAGAATTGTAATTATTAATTGTTGAATTTGAATTTTAAAACTTCGCGAAGCGCCAATTTTCCCGCTCTTTATGCGTTTTATCAAAACGCAGTCGTTTTTACCTTGGACCAAGGCGGGTTGAGTATT",
-#          "MN273331.1": "ACCCCGCCTTGGAACACCTCCTTGGAACGGGTATAAAAATAAATGAAAAATAAAATTAATTAATGGCTTGTGCGAATTGGGTTTTCACGCGTAACTTTGAAGGTGCTCTCCCTTCTCTCTCGTTCGACGAGAGAGTTCAATATGCATCCTGGCAACATGAGAGAGGATCACATGATCATATCCAGGGAGTAATTCAACTGAAGAAGAAGGCAAGAATATCAACTGTGAAGGAGTTAATTGGTGGAAATCCTCATCTGGAGAAGATGAAGGGTACAATTGAAGAAGCTACTGCTTATTCCCAGAAAGAAGAAACACGAGTTGCAGGTCCATGGAGTTATGGGGAAATTTTAAAGAAAGGAAGTCATAAGAGGAAGACGATGGAGAGATACTTAGAAGATCCAGAAGAAATGAGATTGAGGGATCCTGATACTGCTCTTCGATGTAAGGCGAAGAAATTAAAGGAAGAATATTGTTCTTCCTTTTCTGGGTTCAAGCTTCGTCCATGGCAGGTTGAGCTTCATAGAGCTTTAATGGCAGAACCAGACAACCGGACAATTATCTGGGTTTATGGTCCTGATGGAGGAGAAGGAAAATCAACGTTTGCTAAGGAATTAATTAAATATAATTGGTTTTATTCAGCAGGAGGGAAGACTCAAGACGTTCTGTATATGTATGCACAAGATCCAGAAAGAAATATTGCCTTTGATGTGCCCAGATGTTCTTCGGAGATGATGAACTATCAAGCGATGGAGATGATGAAAAATAGATGCTTTGCAAGTACAAAATATAGGCCCGTAGATCTTTGTGTTATGAAAAATGTACATTTAATTGTGTTTGCCAACGTGGCACCGGACCCCACAAAAATAAGTGAGGACAGAATTGTAATTATTAATTGTTGAATTTGAATTTTAAAACTTCGCGAAGCGCCAATTTTCCCGCTCTTTATGCGTTTTATCAAAACGCAGTCGTTTTTACCTTGGACCAAGGCGGGTTGAGTATT", 
-#          "LC010784.1": "ACCCGCCTCTCATCCCTCACCTTTCATCCCGGTCCCACCATGCCAACTGTGCAATCCACTTGTTGGGTGTTCACACTTAACTTTAAAGGCGAAATTCCTATTTTGCCCTTTAATGACCGCGTTCAGTACGCCTGTTGGCAACACGAAAGAGTGGGCCATGACCATTTACAGGGCTTTATTCAGATGAAGGCCCAACAATCTTTGGGCCAAATGAAGGCCATTATTCCTGGAGCCCATTTTGAGAAAATGAGGGCATTAAATACAGACCAGGCTAAGGCTTACGCTATGAAGGAAGACACACGAATAGAAGGACCATGGGAGTATGGTTTATACATTAAGAAGGGATCGCATAAGAGAAAAATTATGGAGCGATTTGAAGATGACCCAGAAGAAATGAAGATTGAAGATCCCTCACTATATCGTCGGTGTTTATCAAGGAAGATGACAGAAGAACAACGATCAACTGCAGAGTGGAATTACGACATGAGGCCATGGCAAGACCAAGTCATACAAGAGATAGAAGAGACACCTGATTACCGAAAGATTATCTGGGTTTACGGCCCCAAAGGAGGTGAAGGAAAGAGTACGTTTGCCAGGTACCTTTCACTCAAACAAGGTTGGGGTTATTTACCTGGTGGTAAGACGCATGACATGATGCATATCATCAGTGGAGAACCGAAGAACAACTGGGTCTTTGACATCCCAAGAGTAGCGTCTGAGTATGTGAACTATGGTGTATTAGAGCAGGTTAAAAATAGAGTTATGGTTAATACTAAGTACGAGCCAATAGTAATTAGGGATGATAATCATCCTGTTCATGTAATTGTGTTTGCTAATTGTATGCCAGACTTCACAAAAATAAGTGAAGATCGAATGAAAATAGTCCATTGTTAAGAAATATGTTGTTTTTGAAATTACGCGAAGCGAAGTCCCACATCGAATAGGTTGGAGAACTGAGCGAGGGATGAAAGCAATAAATGGGGAGAGGCGGCATAGTATT",
-#          "NC_003648.1": "CTGGGGCGGGGCTTAGTATTACCCCCGCCCAGGATCAGCGGAGTCATCACGTGACCCGCACATGCCATTAGTCTATATATAGCTCAAGTTGTAATATTTTATCATTCATGAATAAAATATGGCTCGGCAAGTTATATGCTGGTGCTTTACATTAAATAATCCTCTCTCTCCTCTTTCTCTTCATGAATTAATGAAGTACCTTGTTTATCAAAGAGAACAAGGTGAAGCTGGAAATATTCATTTCCAGGGTTATATTGAGATGAAGAAACGCACGTCTCTTGCAGGTATGAAGAAATTAATCCCAGGTGCCCACTTCGAAAAGAGGAGAGGTACTCAAGGTGAAGCTAGAGCTTACGCCATGAAGGAAGACACCCGTCTTGAAGGTCCATGGGAGTATGGGGAGTTCATCCCCACCATTGAAGATAAGCTCAGAGAAGTTATGAACGACATGAAGATTACAGGTAAGAGACCTATTGAGTATATAGAAGAGTGTTGTAATACATATGATAAATCTGCGAGTACTCTAAGGGAATTCAGAGGTGAGTTGAAGAAGAAGAAGGCAATTATAAGTTGGGAGTTGCAGAGGAAGCCATGGATGGACGAGGTTGATACCTTGCTTCAAGAGAGAGATGGAAGACGAATCATTTGGGTGTATGGCCCACAAGGTGGAGAAGGGAAAACCTCTTACGCTAAGCATCTTGTGAAAACGCGTGATGCTTTTTATTCGACAGGTGGAAAGACAGCCGACATTGCTTTTGCGTGGGACCACCAAGAGTTAGTGCTGTTCGACTTTCCTCGAAGCTTCGAGGAGTATGTCAATTACGGAGTAATTGAGCAATTAAAAAATGGAATAATACAGTCTGGCAAGTATCAAAGTGTAATTAAGTATAGTGATTATGTGGAAGTGATTGTATTTGCTAATTTTACTCCGCGTAGCGGCATGTTTAGTGACGATAGGATTGTGTATGTATATGCATGACGTCATATGATCCCTTGCTGAG", 
-#          "NC_003640.1": "GAGAGGCGGCATAGTATTACCCGCCTCTCATCCCTCACCTTTCATCCCGGTCCCACCATGCCAACTGTGCAATCCACTTGTTGGGTGTTCACACTTAACTTTAAAGGGGAAATTCCTATTTTGCCCTTTAATGAACGCGTTCAGTACGCCTGTTGGCAACACGAAAGAGTGGGCCATGACCACTTACAGGGCTTTATTCAGATGAAGGCCCAACAATCTTTGGGCCAAATGAAGGCCATTATTCCTGGAGCCCATTTTGAGAAAATGAGGGCATTAAATTCAGACCAGGCTAAGGCTTACGCTATGAAGGAAGACACACGAATAGAAGGACCATGGGAGTATGGAAAATACATTAAGAAGGGATCGCATAAGAGAAAAATTATGGAGCGATTTGAAGACGACCCAGAAGAAATGAAGATTGAAGATCCCTCACTATATCGTCGTTGTCTATCAAGGAAGATGACAGAAGAACAACGATCAACTGCAGAGTGGAATTACGATATGAAGCCATGGCAAGACCAAGTCATACAAGAGATAGAAGAGACACCTGATTACCGAAAGATTATATGGGTTTACGGCCCCAAAGGAGGTGAAGGAAAGAGTACGTTTGCCAGGTACCTTTCACTCAAACAAGGTTGGGGTTATTTACCTGGTGGTCCGACGCATGACATGCTGCATATCATCAGTGGAGAACCGAAGAACAACTGGGTCTTTGACATCCCAAGAGTAGCGTCTGAGTATGTGAATTATGGTGTATTAGAACAGGTTAAAAATAGAGTTATGGTTAATACTAAGTATGAGCCAATAGTAATTAGGGATGATAATCATCCTGTTCATGTAATTGTGTTTGCTAATTGTATGCCAGACTTCACAAAAATAAGTGAAGATCGAATGAAAATAGTCCATTGTTAAGAAATATGTTGTTTTTAAAACTACGCGAAGCGAAGTCCCACATCGAATAGGTTGGAGAACTGAGCGAGGGATGAAAGCAATAAATAGG",
-#          "MW959719.1": "GAATGTAAAATTTTTATAACAAATAAAAACTTTCAACAACGGATCTCTTGGCTCTCGCATCGATGAAGAACGCAGCGAAATGCGATACGTAATGTGAATTGCAGAATTCAGTGAATCATCGAATCTTTGAACGCATCTTGCGCTCTCTGGTATTCCGGAGAGCATGTCTGTTTGAGTGTCATGAATTCTTCAACCCAACTGTTTCTTGTAAACAGCTGGTGTTTGGATTCTGAGCGCTGCTGGCTTCGTGCCTAGCTCGTTCGTAATACATCAGCATCCCTAATACAAGTTTGGATTGACTTGGCGTAATAGACTATTCGCTAAGGATTCAATGTTCGCATTGAGCCAACTTAATTATGGAAGCTTCTAATTGAAAAGTCTACCTTTAGATTAGATCTCAAATCAGGCAGGATTACCCGCTGAACTTAAGCATATCAATAAGCGGAGGAAAAGAAACTAACAAGGATTCCCCTAGTAGCGGCGAGCGAAGCGGGAAAAGCTCAAATTTGTAATCTGGCGTCTACGACGTCCGAGTTGTAATCTCGAGAAGTGTTTTCCGTGATAGACCGCATACAAGTCTCTTGGAACAGAGCGTCATAGTGGTGAGAACCCAGTACACGATGCGGATGCCTATTACTTTGTGATACACTTTCGAAGAGTCGAGTTGTTTGGGAATGCAGCTCAAATTGGGTGGTAAATTCCATCTAAAGCTAAATATTGGCGAGAGACCGATAGCGAACAAGTACCGTGAGGGAAAGATGAAAAGCACTTTGGAAAGAGAGTTAACAGTACGTGAAATTGTTGGAAGGGAAACACATGCAGCCAGACTTGCTATTCGGGGCAACTCGATTGGCAGGCCCGCATCAGTTTTTCGGGGCGGAAAAGCATAGAGAGAAGGTAGCAATTTCGGTTGTGTTATAGCTCTTTATTGGATTCGCCCTGGGGGACTGAGGAACGCAGCGTGCTTTTAGCATAAGCTTCGGCTTATCCACGCTTAGGAT"}
-#     # z = "exp-000000-000001-000002_14_12_2021_0_21_33.json"
-#     z = "secuencies100-BIMS-test-2022-03-31_15h16m37s57794ms.json"
-#     align = Alineador_multi(secuencias=y, tolerancia_atras=2, tolerancia_delante=2, json_patrones= os.path.join(x, z))
+#     x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\motifs\\multi\\"
+#     y = {
+#         "GU437440.1":"TTTACTGAGCTTAGAGTTTGATCCTGGCTCAGGATGAACGCTAGCGGCAGGCTTAACACATGCAAGTCGAGGGGTAGAGTAGCAATACTTGAGACCGGCGCACGGGTGCGTAACGCGTATGCAATCTACCTTGTACGGGGGAATAGCCCAGAGAAATTTGGATTAATGCCCCATAGTATAATTAAATGGCATCATTTAATTATTAAAGTTCAGGCGGTACAAGATGAGCATGCGTCCCATTAGCTAGTTGGTATGGTAACGGCATACCAAGGCAATGATGGGTAGGGGTCCTGAGAGGGAGATCCCCCACACTGGTACTGAGACACGGACCAGACTCCTACGGGAGGCAAGCAGTGAGGAATATTGGGCAATGGACGCTAGTCTGACCCAGCCATGCCGCGTGCAGGAAGACGGTCCTATGGATTGTAAACTGCTTTTGTACGGGAAAGGAAACCCTACTACGCGTAGTAGATTGACGGTACTGTACGAATAAGGATCGGCTAACTCCGTGCCAGCAGCCGCGGTAATACGGAGGATCCAAGCGTTATCCGGAATCATTGGGTTTAAAGGGTCCGTAGGCGGTTTTATAAGTCAGTGGTGAAATCTGGTCGCTCAACGATCAAACGGCCATTGATACTGTAGAACTTGAATGATTAGGAAGTAACTAGAATATGTAGTGTAGCGGTGAAATGCTTAGATATTACATGGAATACCAATTGCGAAGGCAGGTTACTACTAATTGATTGACGCTGATGGACGAAAGCGTGGGTAGCGAACAGGATTAGATACCCTGGTAGTCCACGCCGTAAACGATGGATACTAGCTGTTGGGAGCAATTTCAGTGGCTAAGCGAAAGTGATAAGTATCCCACCTGGGGAGTACGAACGCAAGTTTGAAACTCAAAGGAATTGACGGGGGCCCGCACAAGCGGTGGAGCATGTGGTTTAATTCGATGATACGCGGGGAACCTTACCAAGGCTTAAATGTATTTTGACCGGTTTGGAAACAGACCTTTCGCAAGACAAATTACAAGGTGCTGCATGGTTGTCGTCAGCTCGTGCCGTGAGGTGTCAGGTTAAGTCCTATAACGAGCGCAACCCCTGTTGTTAGTTGCCAGCGAGTAAGGTCGGGAAACTCTAGCAAGACTGCCAGTGCAAACTGTGAGGAAGGTGGGGATGACGTCAAATCATCACGGCCCTTACGCCTTGGGCTACACACGTGCTACAATGGTAAGTACAGAGAGCAGCCACAACGCAAGTTGGAGCGAATCTATAAAGCTTATCTCAGTTCGGATCGGAGTCTGCAACTCGACTCCGTGAAGCTGGAATCGCTAGTAATCGGATATCAGCCATGATCCGGTGAATACGTTCCCGGGCCTTGTACACACCGCCCGTCAAGCCATGGAAGCTGGGGGTACCTGAAGTCGGTGACCGCAAGGAGCTGCCTAGGGTAAAACTGGTAACTGGGGCTAAGTCGTAACAAGGTAACCAAGCCGTAGAA",
+#         "DQ990946.2":"TGGCGGCAGGCCTAACACATGCAAGTCGAGCGGTAGAGAGAAGCTTGCTTCTCTTGAGAGCGGCGGACGGGTGAGTAATGCCTAGGAATCTGCCTGGTAGTGGGGGATAACGTTCGGAAACGGACGCTAATACCGCATACGTCCTACGGGAGAAAGCAGGGGACCTTCGGGCCTTGCGCTATCAGATGAGCCTAGGTCGGATTAGCTAGTTGGTGAGGTAATGGCTCACCAAGGCGACGATCCGTAACTGGTCTGAGAGGATGATCAGTCACACTGGAACTGAGACACGGTCCAGACTCCTACGGGAGGCAGCAGTGGGGAATATTGGACAATGGGCGAAAGCCTGATCCAGCCATGCCGCGTGTGTGAAGAAGGTCTTCGGATTGTAAAGCACTTTAAGTTGGGAGGAAGGGTTGTAGATTAATACTCTGCAATTTTGACGTTACCGACAGAATAAGCACCGGCTAACTCTGTGCCAGCAGCCGCGGTAATACAGAGGGTGCAAGCGTTAATCGGAATTACTGGGCGTAAAGCGCGCGTAGGTGGTTTGTTAAGTTGGATGTGAAATCCCCGGGCTCAACCTGGGAACTGCATTCAAAACTGACTGACTAGAGTATGGTAGAGGGTGGTGGAATTTCCTGTGTAGCGGTGAAATGCGTAGATATAGGAAGGAACACCAGTGGCGAAGGCGACCACCTGGACTAATACTGACACTGAGGTGCGAAAGCGTGGGGAGCAAACAGGATTAGATACCCTGGTAGTCCACGCCGTAAACGATGTCAACTAGCCGTTGGAAGCCTTGAGCTTTTAGTGGCGCAGCTAACGCATTAAGTTGACCGCCCGGGGAGTACGGCCGCAAGGTTAAAACTCAAATGAATTGACGGGGGCCCGCACAAGCGGTGGAGCATGTGGTTTAATTCGAAGCAACGCGAAGAACCTTACCAGGCCTTGACATCCAATGAACTTTCTAGAGATAGATTGGTGCCTTCGGGGACATTGAGACAGGTGCTGCATGGCTGTCGTCAGCTCGTGTCGTGAGATGTTGGGTTAAGTCCCGTAACGAGCGCAACCCTTGTCCTTAGTTACCAGCACGTTATGGTGGGCACTCTAAGGAGACTGCCGGTGACAAACCGGAGGAAGGTGGGGATGACGTCAAGTCATCATGGCCCTTACGGCCTGGGCTACACACGTGCTACAATGGTCGGTACAGAGGGTTGCCAAGCCGCGAGGTGGAGCTAATCCCATAAAACCGATCGTAGTCCGGATCGCAGTCCGCAACTCGACTGCGTGAAGTCGGAATCGCTAGTAATCGCGAATCAGAATGTCGCGGTGAATACGTTCCCGGGCCTCGTACACACCGCCCGTCACACCATGGGAGTGGGTTGCACCAGAAGTAGCTAGTCTAACCTTCGGGAGGACGGTTACCACGGTGTGATTCATGACTGGGGTGAAGTCGTAACAAGGTAGCCGTAGGGGAACCTGTGGTTGGATCACCTCCTT",
+#         "AY734690.1":"AGGCGTGGGTTCAAAGCGGTGTTAAAGATTATAGATTAACTTATTACACTCCTGATTATGAGACCAAGGAGACAGACATTTTGGCAGCATTTCGTATGACTCCCCAACCGGGGGTACCACCGGAAGAAGCAGGAGCAGCAGTAGCTGCTGAATCTTCAACTGGTACGTGGACTACGGTTTGGACTGATGGACTTACCAGTCTCGATCGTTACAAAGGTCGATGCTACGACATCGAACCCGTTGCTGGGGAAGAAAATCAATACATTGCTTACGTGGCTTATCCTTTAGATTTATTCGAAGAAGGTTCTGTAACGAACCTATTTACTTCTATTGTGGGTAACGTTTTTGGCTTTAAAGCTTTACGAGCCTTGCGTCTCGAAGATTTGAGAATCCCCCCAGCTTACGTAAAAACCTTCCAAGGTCCACCTCATGGTATCCAGGTTGAAAGAGATAAATTGAATAAATATGGTCGTCCTTTATTGGGGTGCACTATCAAACCAAAATTGGGTTTATCCGCTAAAAATTATGGTAGAGCTGTGTACGAATGTCTCCGCGGCGGACTCGATTTCACGAAAGATGATGAGAATGTAAATTCCCAGCCATTTATGCGTTGGAGGGATCGTTTCTTGTTCGTAGCAGAAGCTATTTTTAAGTCCCAGGCAGAAACAGGCGAAATAAAAGGACATTATCTAAATGCTACTGCAGGCACATCCGAAGAAATGTTGAAAAGAGCAGCATGTGCTAGAGAGTTAGGTGTACCGATTGTTATGCATGATTATCTTACGGGGGGTTTCACTGCAAATACAAGTCTAGCTCATTATTGCCGAGACAATGGTCTACTTCTCCATATTCACCGCGCGATGCATGCAGTTATTGACAGACAAAAAAATCATGGTATGCACTTCCGTGTATTAGCAAAAGCATTGCGCCTATCTGGTGGAGATCACATCCATGCCGGTACCGTTGTAGGTAAACTTGAGGGGGAGCGCGAAGTTACTTTGGGTTTCGTGGATTTATTGCGCGATGATTACATAGAAAAAGACCGTAGTCGCGGTATTTATTTTACCCAAGATTGGGTCTCCCTACCAGGTGTTTTACCCGTAGCATCTGGGGGTATTCACGTTTGGCATATGCCTGCTCTAACCGAAATTTTTGGGGATGATTCTGTATTACAATTCGGCGGTGGAACTTTGGGCCACCCTTGGGGCAACGCACCAGGTGCAGTTGCTAACCGAGTCGCTCTAGAAGCTTGCGTACAAGCCCGTAATGAGGGCCGTGACCTTGCCCGCGAAGGTAACGAAGTTATTCGTGAAGCTGCTAAATGGAGCCCTGATTTGGCCGCTGCTTGCGAAGTACGGAAAGAAATCAAATTTGAATACGAAACAATCGATACTTTATAATTTTTTTCCACTCTCCTTTCTCCCACCCCAAACTTGGGGTGGAAGGAAGAAGACGAGGTAGGGTAACTATAACATAAGAGAAAATTAGAGAAGATTCTTT"
+#     }
+#     z = "id2secuencies32-BIMS-test-2022-05-03_15h52m28s825238ms.json"
+#     align = Alineador_multi(secuencias=y, tolerancia_atras=2, tolerancia_delante=2, json_patrones= os.path.join(x, z), imprimir_logo=False)
 #     align.alineador()

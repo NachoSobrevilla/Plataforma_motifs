@@ -127,7 +127,7 @@
             y.style.display = 'none';
         } else {
             y.style.display = 'block';
-            $("#patronesHallados").empty();
+            $("#resultados").empty();
 
 
         }
@@ -381,7 +381,7 @@
         document.getElementById("principalFormFile").style.display = "none";
         document.getElementById("principalFormTxt").style.display = "none";
         document.getElementById("configAlgorithm").style.display = "none";
-        $("#patronesHallados").empty();
+        $("#resultados").empty();
         // document.getElementById("resultForm").style.display = "none";
     }
 
@@ -760,10 +760,10 @@
                         }
                         dataReturn = data_response;
                         cargadorResultados();
-                        despliegePatrones(data_response);
+                        despliegeResultados(data_response);
                         // console.log(data_response);
                         // console.log(data_response.Patrones.length);
-                        // $patrones = $('#patronesHallados');
+                        // $patrones = $('#resultados');
                         // $patrones.empty()
 
                         // $tabla = $('<table class="table table-bordered"></table>');
@@ -858,8 +858,8 @@
 
                         dataReturn = data_response;
                         cargadorResultados();
-                        despliegePatrones(data_response);
-                        // $patrones = $('#patronesHallados');
+                        despliegeResultados(data_response);
+                        // $patrones = $('#resultados');
                         // $patrones.empty()
 
                         // $tabla = $('<table class="table table-bordered"></table>');
@@ -895,21 +895,30 @@
 
     //-------------------------------------------
 
-    function despliegePatrones(data) {
+    function despliegeResultados(data) {
         console.log(data);
-        $patrones = $('#patronesHallados');
+        $patrones = $('#resultados');
         $patrones.empty()
 
-        $tabla = $('<table id="resultadoPatrones" class="table table-bordered " cellpadding="5" ></table>');
+        $tabs = $('<ul class="nav nav-tabs nav-justified"></ul>');
+        $tabs.append('<li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#tabMotifs">Motifs</a></li>');
+        $tabs.append('<li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tabPatrones">Patrones</a></li>');
+        $divContenedor = $('<div class="tab-content"></div>');
+        $divContenedorMotif = $('<div id="tabMotifs" class="tab-pane fade show active"></div>');
+        $divContenedorPatrones = $('<div id="tabPatrones" class="tab-pane fade"></div>');
+        
+
+        $tabla = $('<table id="resultadoMotifs" class="table table-bordered" cellpadding="5" ></table>');
         $tabla.empty();
         $tabla.append('<thead class="thead-light text-center " align = "center"> <tr>' +
+            '<th>#</th>' +
             '<th>Patron</th>' +
             '<th>Motif</th>' +
             '<th>Expresión Regular</th>' +
             '<th>Ocurrencias del Patron</th>' +
             '<th>Longitud del motif </th>' +
             '<th>Traducciona a aminoáciodos </th>' +
-            '<th>Detalles </th>' +
+            '<th>Posiciones Especificas</th>' +
 
             // '<th>Patron</th>' +
             // '<th>Longitud</th>' +
@@ -922,6 +931,7 @@
             // $fila = $("<tr onClick=mostrarDatosJSON("+i+") data-toggle='modal' data-target='#PatternsModal'></tr>");
             // console.log(data.Alineaciones[i]);
             $fila = $("<tr data-toggle='modal' data-target='#PatternsModal'></tr>");
+            $fila.append('<td>' + (i + 1) + '</td>');
             $fila.append('<td>' + data.Alineaciones[i].patron + '</td>');
             $fila.append('<td>' + data.Alineaciones[i].motif + '</td>');
             $fila.append('<td>' + data.Alineaciones[i].expresion_regular + '</td>');
@@ -938,8 +948,43 @@
         }
 
         $patrones.append('<h3 class="h5 text-info text-center p-2 m-2">Resultados</h3>');
+
         $tabla.append($tablabody);
-        $patrones.append($tabla);
+        $divContenedorMotif.append($tabla);
+
+
+        $tabla2 = $('<table id="resultadoPatrones" class="table table-bordered" cellpadding="5" ></table>');
+        $tabla2.empty();
+        $tabla2.append('<thead class="thead-light text-center " align = "center"> <tr>' +
+            '<th>#</th>' +
+            '<th>Patron</th>' +
+            '<th>Longitud</th>' +
+            '<th>Ocurrencias</th>' +
+            '<th>Posiciones</th>' +
+            '</tr> </thead>');
+        $tablabody2 = $('<tbody></tbody>');
+        for (var i = 0; i < data.Alineaciones.length; i++) {
+        // for (var i = 0; i < data.Patrones.length; i++) {
+            // $fila = $("<tr onClick=mostrarDatosJSON("+i+") data-toggle='modal' data-target='#PatternsModal'></tr>");
+            // console.log(data.Alineaciones[i]);
+            $fila = $("<tr data-toggle='modal' data-target='#PatternsModal'></tr>");
+            $fila.append('<td>' + (i + 1) + '</td>');
+            $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Patron + '</td>');
+            $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Longitud + '</td>');
+            $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Ocurrencias + '</td>');
+            $fila.append('<td class="text-center" align="center" valign="middle" >' + '<button type="button" class="btn  btn-warning"' + "onClick=mostrarDatosJSON(" + i + ")>" + "Posiciones" + '</button>' + '</td>');
+           
+
+            $tablabody2.append($fila);
+        }
+
+        $tabla2.append($tablabody2);
+        $divContenedorPatrones.append($tabla2);
+
+        $divContenedor.append($divContenedorMotif);
+        $divContenedor.append($divContenedorPatrones);
+
+        $patrones.append($divContenedor);
         $patrones.append("<br>");
 
         var bttdiv = document.createElement('div');
@@ -972,6 +1017,7 @@
         //$patrones.append(a);
         // $patrones.append(aJSON);
         bttdiv.append(aJSON);
+        bttdiv.append("<br>");
         // $patrones.append("<br>");
 
         //boton de descarga de archivo csv
@@ -988,6 +1034,7 @@
         aCSV.innerHTML = "Descargar CSV Patrones frecuentes";
 
         bttdiv.append(aCSV);
+        bttdiv.append("<br>");
 
         //boton de descarga de archivo xlsx motifs
         var aXLS = document.createElement('a');
@@ -1002,7 +1049,8 @@
         aXLS.title = "Descarga los resultados en un archivo xls de los motifs hallados";
         aXLS.innerHTML = "Descargar xls";
 
-        bttdiv.append(aCSV);
+        bttdiv.append(aXLS);
+        bttdiv.append("<br>");
 
         //boton de descarga de archivo xlsx motifs
         var aJSONm = document.createElement('a');
@@ -1017,7 +1065,8 @@
         aJSONm.title = "Descarga los resultados en un archivo JSON de los motifs hallados";
         aJSONm.innerHTML = "Descargar JSON Motifs";
 
-        bttdiv.append(aCSV);
+        bttdiv.append(aJSONm);
+        bttdiv.append("<br>");
 
         //boton de nuevo proceso
         var newprocess = document.createElement('button');
@@ -1040,7 +1089,7 @@
         $patrones.append(bttdiv);
 
         $(document).ready(function () {
-            $('#resultadoPatrones').DataTable();
+            $('#resultadoMotifs').DataTable();
             $('.dataTables_length').addClass('bs-select');
         });
 

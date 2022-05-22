@@ -402,15 +402,15 @@ class basado_indices_secuencial(object):
       key_seq = lambda x: self.keys_seqs[x] if len(self.keys_seqs) else x
       
       return { "Configuracion": {
-                                 "Algoritmo":"Basado en indices en multiples sequencias",
+                                 "Algoritmo":"Basado en indices en multiples Secuencias",
                                  "Siglas": "BIMS",
                                  "Min_sup": self.get_minsup(),
                                  "Tipo_Entrada": self.get_inputType(),
                                  "Entrada": self.get_inputName(),
-                                 "Sequencias_ananlizadas": "-".join(self.get_keys_seqs()),
-                                 "Num_Sequencias_ananlizadas": len(self.get_dbsequence()),
-                                 "Lon_Sequencias_ananlizadas": "-".join(str(len(i)) for i in self.db_sequence),
-                                 "Num_Patrones_hallados": len(self.get_patrones()),
+                                 "Secuencias_analizadas": "-".join(self.get_keys_seqs()),
+                                 "Num_Secuencias_analizadas": len(self.get_dbsequence()),
+                                 "Lon_Secuencias_analizadas": "-".join(str(len(i)) for i in self.db_sequence),
+                                 "Num_patrones_hallados": len(self.get_patrones()),
                                  "Fecha_Hora_Inicio": "{}".format(self.get_initDateTime()),
                                  "Fecha_Hora_Fin": "{}".format(self.get_finDateTime()),
                                  "Duracion": str(self.get_finDateTime() - self.get_initDateTime())
@@ -421,7 +421,7 @@ class basado_indices_secuencial(object):
                               "Ocurrencias": len(values.items()),
                               "Traduccion_aminoacido": self.traductorCodon(key),   #.getCodonCoded(),
                               "Posiciones": [{
-                                             "sequencia": key_seq(seq),
+                                             "secuencia": key_seq(seq),
                                              "posicion": p+1}
                                              for seq, pos in values.items() for p in pos]
                               }for key, values in self.patrones.items()]

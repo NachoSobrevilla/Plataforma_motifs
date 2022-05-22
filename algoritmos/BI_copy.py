@@ -406,10 +406,10 @@ class basado_indices(object):
                                  "Min_sup": self.get_minsup(),
                                  "Tipo_Entrada": self.get_inputType(),
                                  "Entrada": self.get_inputName(),
-                                 "Sequencias_ananlizadas": '-'.join(self.get_keys_seqs()),
+                                 "Secuencias_analizadas": '-'.join(self.get_keys_seqs()),
                                  "Longitud_Secuencias": len(self.sequence),
-                                 "Num_Sequencias_ananlizadas": 1,
-                                 "Num_Patrones_hallados": sum(len(self.patrones[j]) for j in self.patrones.keys()),
+                                 "Num_secuencias_analizadas": 1,
+                                 "Num_patrones_hallados": sum(len(self.patrones[j]) for j in self.patrones.keys()),
                                  "Fecha_Hora_Inicio": '{}'.format(self.get_initDateTime()),
                                  "Fecha_Hora_Fin": '{}'.format(self.get_finDateTime()),
                                  "Duracion": str(self.get_finDateTime() - self.get_initDateTime())
@@ -419,7 +419,7 @@ class basado_indices(object):
                                  "Longitud": len(k),
                                  "Ocurrencias": len(v),
                                  "Traduccion_aminoacido": self.traductorCodon(k),
-                                 "Posiciones": [{"sequencia": self.keys_seqs, #key,
+                                 "Posiciones": [{"secuencia": self.keys_seqs[0], #key,
                                                 "posicion": pos+1}
                                                 for pos in v]
                                                 } for key, values in self.patrones.items()

@@ -6,6 +6,7 @@ import sys
 import os
 from click import FileError, exceptions
 from numpy import False_
+import imp
 from tqdm import tqdm
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -21,7 +22,7 @@ import json
 import Alineador_Patornes, Alineador_Patornes_multi
 
 x = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\Secuencias ADN\\"
-y = "sequence_citrus_8_150M.fasta"#"test_sequence.fasta"   
+# y = "sequence_citrus_8_150M.fasta"#"test_sequence.fasta"   
 z = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\"
 z1 = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\motifs\\"
 # x1 = "C:\\Users\\sobre\\Documents\\MCCAyE\\Tesis\\pruebas\\No funcionales\\backend\\Empredas por trabajos anteriores\\longitud similar\\"
@@ -32,15 +33,15 @@ y1 = "sequence_XM_011544263.fasta"
 
 def read_file():
     d1 = datetime.now()
-    read = r.Reader(x+y)
+    read = r.Reader(x)
     list_sequences, head_sequences, keys_seq = read.run()
     pdt = datetime.now()
     d2 = datetime.now()
     # print('Duración: ', d2-d1)
     df = pd.json_normalize({
-        "Nombre_archivo: ": y,
-        "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
-        "Num Aprox de bp: ": os.path.getsize(x+y),
+        "Nombre_archivo: ": "-",
+        "Peso_archivo (MB): ": (os.path.getsize(x)/1000000),
+        "Num Aprox de bp: ": os.path.getsize(x),
         'Algoritmo': 'Procesamiento de archivo (PA)',
         "Lista_sequencia_longitud: ": len(list_sequences),
         "Lista_encabezados: ": len(head_sequences),
@@ -79,7 +80,7 @@ def find_n_patterns_bims():
         pf.set_finDateTime(datetime.now())
         
         dtBI = {
-            "Sequencias": "-".join(keys_seq),
+            "Secuencias": "-".join(keys_seq),
             "longitud": "-".join(str(len(i)) for i in list_sequences),
             "patrones_obtenidos": len(pf.get_only_patrones()),
             "duracion": '{}'.format(pf.get_finDateTime() - pf.get_initDateTime()),
@@ -92,7 +93,7 @@ def find_n_patterns_bims():
         
         print("analisis finalizado")
         try:
-            with open(z1+"multi"+os.path.sep+tail+"secuencies"+str(len(keys_seq))+'_BIMS_test_'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+            with open(z1+"multi"+os.path.sep+tail+'_BIMS_test_'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
                 json.dump(pf.info_patrones(), file_object_json, sort_keys=True, indent=4)
                 
         except FileError as e:                
@@ -106,9 +107,9 @@ def find_n_patterns_bims():
             
         # print('Duración: ', d2-d1)
         df = pd.json_normalize({
-            "Nombre_archivo: ": archivo,
-            "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
-            "Num Aprox de bp: ": os.path.getsize(x+y),
+            "Nombre_archivo: ": tail+".fasta",
+            "Peso_archivo (MB): ": (os.path.getsize(archivo)/1000000),
+            "Num Aprox de bp: ": os.path.getsize(archivo),
             'Algoritmo': '(PA)+BIMS+Alineador',
             "Lista_sequencia_longitud: ": len(list_sequences),
             "Lista_encabezados: ": len(head_sequences),
@@ -128,7 +129,6 @@ def find_n_patterns_bims():
         
         i += 1
         
-        break
         
 
 def find_n_patterns_gsp():
@@ -161,7 +161,7 @@ def find_n_patterns_gsp():
         pf.set_finDateTime(datetime.now())
 
         dtBI = {
-            "Sequencias": "-".join(keys_seq),
+            "Secuencias": "-".join(keys_seq),
             "longitud": "-".join(str(len(i)) for i in list_sequences),
             "patrones_obtenidos": len(pf.get_only_patrones()),
             "duracion": '{}'.format(pf.get_finDateTime() - pf.get_initDateTime()),
@@ -171,11 +171,11 @@ def find_n_patterns_gsp():
         print("analisis finalizado")
         
         align = Alineador_Patornes_multi.Alineador_multi(
-            secuencias=dict(zip(keys_seq, list_sequences)), tolerancia_atras=2, tolerancia_delante=2, json_patrones=pf.info_patrones(), imprimir_logo=False)
+            secuencias=dict(zip(keys_seq, list_sequences)), tolerancia_atras=2, tolerancia_delante=2, json_patrones=pf.info_patrones(), imprimir_logo=True)
         align.alineador()
         
         try:
-            with open(z1+"multi"+os.path.sep+"secuencie"+str(len(keys_seq))+tail+'_GSP_test_'+'-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+            with open(z1+"multi"+os.path.sep+tail+'_GSP_test_'+'-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
                 json.dump(pf.info_patrones(), file_object_json,
                           sort_keys=True, indent=4)
 
@@ -191,8 +191,8 @@ def find_n_patterns_gsp():
         # print('Duración: ', d2-d1)
         df = pd.json_normalize({
             "Nombre_archivo: ":  tail + ".fasta", #archivo, #y
-            "Peso_archivo (MB): ": (os.path.getsize(x+y)/1000000),
-            "Num Aprox de bp: ": os.path.getsize(x+y),
+            "Peso_archivo (MB): ": (os.path.getsize(archivo)/1000000),
+            "Num Aprox de bp: ": os.path.getsize(archivo),
             'Algoritmo': '(PA)+GSP+alineador',
             "Lista_sequencia_longitud: ": len(list_sequences),
             "Lista_encabezados: ": len(head_sequences),
@@ -238,20 +238,24 @@ def find_patterns_bi():
         pf.set_finDateTime(datetime.now())
         dataBi = pf.info_patrones()
         dtBI = {
-            "Sequencia":dataBi["Configuracion"]["Sequencias_ananlizadas"],
+            "Sequencia":dataBi["Configuracion"]["Secuencias_analizadas"],
             "longitud": dataBi["Configuracion"]["Longitud_Secuencias"],
-            "patrones_obtenidos": dataBi["Configuracion"]["Num_Patrones_hallados"],
+            "patrones_obtenidos": dataBi["Configuracion"]["Num_patrones_hallados"],
             "duracion": '{}'.format(dataBi["Configuracion"]["Duracion"]),
             "duracion_seg": str(pf.get_finDateTime() - pf.get_initDateTime())
         }
         
-        align = Alineador_Patornes.Alineador(
-            secuencia=list_sequences[0], tolerancia_atras=2, tolerancia_delante=2, json_patrones=dataBi, imprimir_logo=True)
+        align = Alineador_Patornes_multi.Alineador_multi(
+            secuencias=dict(zip(keys_seq, list_sequences)), tolerancia_atras=2, tolerancia_delante=2, json_patrones=dataBi, imprimir_logo=False)
         align.alineador()
+        
+        # align = Alineador_Patornes.Alineador(
+        #     secuencia=list_sequences[0], tolerancia_atras=2, tolerancia_delante=2, json_patrones=dataBi, imprimir_logo=True)
+        # align.alineador()
 
         print("analisis finalizado")
         try:
-            with open(z1+"una"+os.path.sep+tail+"_"+"sequences_"+str(keys_seq)+'-BI-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
+            with open(z1+"una"+os.path.sep+tail+'-BI-test-'+'{}'.format(d1.date())+'_'+str(d1.hour)+'h'+str(d1.minute)+'m'+str(d1.second)+'s'+str(d1.microsecond)+'ms'+".json", 'x') as file_object_json:
                 json.dump(dataBi, file_object_json, sort_keys=True, indent=4)
                 
         except FileError as e:                
@@ -264,8 +268,8 @@ def find_patterns_bi():
         # print('Duración: ', d2-d1)
         df = pd.json_normalize({
             "Nombre_archivo: ": tail+".fasta", #"sequence_experimental_1_1000_"+str(i),
-            "Peso_archivo (MB): ": (os.path.getsize(x1+y1)/1000000),
-            "Num Aprox de bp: ": os.path.getsize(x1+y1),
+            "Peso_archivo (MB): ": (os.path.getsize(archivo)/1000000),
+            "Num Aprox de bp: ": os.path.getsize(archivo),
             'Algoritmo': '(PA)+BI+alineador',
             "Lista_sequencia_longitud: ": len(list_sequences),
             "Lista_encabezados: ": len(head_sequences),
@@ -285,7 +289,6 @@ def find_patterns_bi():
         pf.clear()
         
         i+=1
-        
         break
 
 
@@ -310,13 +313,13 @@ def bims_stand_alone():
 
 if __name__ == '__main__':
     find_patterns_bi()
-    find_n_patterns_bims()
+    # find_n_patterns_bims()
     # find_n_patterns_gsp()
 
 
 
 
-# x = "Plataforma_motifs\\sequencias_prueba\\sequences_flu.fasta"
+# x = "Plataforma_motifs\\Secuencias_prueba\\sequences_flu.fasta"
 # d1 = datetime.now()
 # read = r.Reader(x)
 # list_sequences, head_sequences, keys_seq = read.run()
@@ -358,7 +361,7 @@ if __name__ == '__main__':
 
 
 
-# read = Reader(filesnames='Plataforma_motifs\sequencias_prueba\sequence (1).fasta')
+# read = Reader(filesnames='Plataforma_motifs\Secuencias_prueba\sequence (1).fasta')
 
 # list_sequence, headline = read.run()
 # bi = BI_n_sequences_copy()

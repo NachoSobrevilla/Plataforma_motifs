@@ -78,7 +78,7 @@ def analisisTxt():
 
     files_generator(patrones)
     # return jsonify(patrones)
-    return jsonify(patrones_motif)
+    return jsonify(patrones_motif), jsonify(patrones)
 
     # return json.dumps({'Candidatos':candidates})
 
