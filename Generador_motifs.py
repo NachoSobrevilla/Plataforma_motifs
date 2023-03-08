@@ -12,7 +12,7 @@ from tqdm import tqdm
 import copy
 EXP_FOLDER = join(dirname(realpath(__file__)), 'experimentos')
 
-class Alineador_multi(object):
+class Generador(object):
     def __init__(self, secuencias = {}, tolerancia_delante = 2, tolerancia_atras = 2, longitud_minima_cre = 6, json_patrones = "", imprimir_logo = False):
         self.secuencias = secuencias
         self.tolerancia_delante = tolerancia_delante
@@ -393,37 +393,46 @@ class Alineador_multi(object):
                     if row > 100000:  # 1000000 :
                         break
                 #Si items llega  al longitud de los motifs menos uno, entonces se rompe el ciclo while
-                if items == len(motifs_json['Alineaciones'])-1:
+                if items == len(motifs_json['Alineaciones'])-1 or len(motifs_json['Alineaciones'])==0:
                     break
 
             excel_writer.close()
 
         #Formacion del nombre del archivo, tal como lo hace el server
+        
+    
+        
         x = ""
+        x += "MOTIFS_"
         x += "EXP_"+str(kargs['Entrada']).replace(".fasta","")+ '_' + \
+            str(kargs['Tipo_Entrada'])+ '_' +\
             str(kargs['Siglas']) + '_' +\
-            str(kargs['Min_sup']) + '_' 
+            str(kargs['Min_sup']) + '_' +\
+            str(self.tolerancia_delante) +'_'+\
+            str(self.tolerancia_atras)+'_'+\
+            str(self.longitud_minina_cre)+'_'+\
+            str(self.imprimir_logo)+'_'
             # + \
             # str(kargs['Num_secuencias_analizadas']) + '_' 
 
         dt = datetime.datetime.strptime(
             kargs['Fecha_Hora_Inicio'], '%Y-%m-%d %H:%M:%S.%f')
 
-        x += str(dt.day)+"d"+str(dt.month)+"d"+str(dt.year)+"&" + \
-            str(dt.hour)+"-"+str(dt.minute)+"-"+str(dt.second)+"_"
+        x += str(dt.day)+"-"+str(dt.month)+"-"+str(dt.year)+"_" + \
+            str(dt.hour)+"-"+str(dt.minute)+"-"+str(dt.second)
+        
+        # sdt = str(kargs['Duracion'])
+        # x1 = [i for i in re.split("[ ,:.]", sdt)
+        #       if i.isdigit() or i.isdecimal()]
 
-        sdt = str(kargs['Duracion'])
-        x1 = [i for i in re.split("[ ,:.]", sdt)
-              if i.isdigit() or i.isdecimal()]
+        # if len(x1) < 5:
+        #     x1.insert(0, '0')
+        #     x1.append('0')
 
-        if len(x1) < 5:
-            x1.insert(0, '0')
-            x1.append('0')
-
-        seconds = (int(x1[0])*86400) + (int(x1[1])*3600) + \
-            (int(x1[2])*60) + int(x1[3])
-        # print(sdt, ' ', x1[4])
-        x += 'D-'+str(seconds)+'&'+x1[4]
+        # seconds = (int(x1[0])*86400) + (int(x1[1])*3600) + \
+        #     (int(x1[2])*60) + int(x1[3])
+        # # print(sdt, ' ', x1[4])
+        # x += 'D-'+str(seconds)+'&'+x1[4]
 
         #se asigna la ruta completa tanto para el nombre del archivo json y xlsx
         filename = os.path.join(EXP_FOLDER, "motifs_json", x)

@@ -177,59 +177,70 @@
                 $archivos = $('#mostrarArchivos');
                 $archivos.empty()
 
-                $tabla = $('<table id="experimentos" class="table  table-striped table-bordered table-sm small"></table>');
+                $tabla = $('<table id="experimentos" class="table table-striped table-bordered table-responsive table-sm small"></table>');
                 $tabla.empty();
                 $tabla.append('<thead class="thead-light text-justify"> <tr>' +
                     '<th valing="middle" class="">#</th>' +
+                    '<th valing="middle" class="">Nombre archivo</th>' +
+                    '<th valing="middle" class="">Peso archivo (MB)</th>' +
+                    '<th valing="middle" class="">Num Aprox bp</th>' +
+                    '<th valing="middle" class="">Num Secuencias</th>' +
+                    '<th valing="middle" class="">Secuencias</th>' +
+                    '<th valing="middle" class="">Longitud de la(s) secuencia(s)</th>' +
+                    '<th valing="middle" class="">Tipo entrada</th>' +
                     '<th valing="middle" class="">Algoritmo</th>' +
-                    '<th valing="middle" class="">Umbral</th>' +
-                    '<th valing="middle" class="">Tipo de entrada</th>' +
-                    '<th valing="middle" class="">Nombre <br><small>(archivo fasta o manual)</small> </th>' +
-                    '<th valing="middle" class="">Num. de secuencias analizadas</th>' +
-                    '<th valing="middle" class="">Num. de patrones hallados</th>' +
-                    '<th valing="middle" class="">Fecha y Hora del Análisis</th>' +
-                    '<th valing="middle" class="">Duración del Análisis <small>(segundos)</small></th>' +
-                    '<th valing="middle" class="text-center"> Ver </th>' +
-                    '<th valing="middle" class="text-center"> JSON </th>' +
-                    '<th valing="middle" class="text-center"> CVS </th>' +
+                    '<th valing="middle" class="">Min sup</th>' +
+                    '<th valing="middle" class="">Tolerancia delante</th>' +
+                    '<th valing="middle" class="">Tolerancia detras</th>' +
+                    '<th valing="middle" class="">Longitud minima</th>' +
+                    '<th valing="middle" class="">Impresion logo</th>' +
+                    '<th valing="middle" class="">Num Patrones</th>' +
+                    '<th valing="middle" class="">Longitud max patrones</th>' +
+                    '<th valing="middle" class="">Num motifs</th>' +
+                    '<th valing="middle" class="">Longitud max motifs</th>' +
+                    '<th valing="middle" class="">Inicio</th>' +
+                    '<th valing="middle" class="">Fin</th>' +
+                    '<th valing="middle" class="">Duración</th>' +
+                    '<th valing="middle" class="text-center">  JSON (Patrones Frecuentes) </th>' +
+                    '<th valing="middle" class="text-center">  CVS (Patrones Frecuentes)  </th>' +
+                    '<th valing="middle" class="text-center">  JSON (Motifs) </th>' +
+                    '<th valing="middle" class="text-center">  XLSX (Motifs) </th>' +
                     // '<th>Archivo</th>'+
+                    '</tr> </thead>');
+
+                    "Nombre_Resultados"
                     // '<th> Descarga </th>'+                                    
                     // '<th> CVS </th>'+                                    
-                    '</tr> </thead>');
                 $tablabody = $('<tbody></tbody>')
                 for (var i = 0; i < response.length; i++) {
-                    archivo = response[i].split("_");
-                    console.log(response[i]);
+                    // archivo = response[i].split("_");
+                    // console.log(response[i]);
+
                     $fila = $('<tr></tr>');
 
-                    $fila.append('<td class="text-center" align="center" valign="middle" >' + i + '</td>');
-                    $fila.append('<td class="text-center" align="center" valign="middle" >' + archivo[1] + '</td>');
-                    $fila.append('<td class="text-center" align="center" valign="middle" >' + archivo[2] + '</td>');
-                    $fila.append('<td class="text-center" align="center" valign="middle" >' + archivo[3] + '</td>');
-
-                    if (archivo[3] == "Archivo") {
-                        $fila.append('<td class="text-center" align="center" valign="middle" >' + archivo[4].replace('-', '_') + '.fasta' + '</td>');
-                    } else {
-                        $fila.append('<td class="text-center" align="center" valign="middle" >' + archivo[4] + '</td>');
+                    // $fila.append('<td class="text-center" align="center" valign="middle" >' + i + '</td>');
+                    for (var j = 0; j < response[i].length; j++) {
+                        if (j == response[i].length - 1 ) {
+                            $fila.append('<td class="text-center" align="center" valign="middle" >' + '<a class="btn btn-warning btn-sm my-2" target="_blank"  href="/descarga/experimentos/JSON/' + String(response[i][j]) + '/"' + '>' + 'Descargar JSON PF' + '</a></td>');
+                            $fila.append('<td class="text-center" align="center" valign="middle" >' + '<a class="btn btn-warning btn-sm my-2" target="_blank"  href="/descarga/experimentos/CSV/' + String(response[i][j]) + '/"' + '>' + 'Descargar CSV' + '</a></td>');
+                            $fila.append('<td class="text-center" align="center" valign="middle" >' + '<a class="btn btn-warning btn-sm my-2" target="_blank"  href="/descarga/experimentos/JSONMotif/' + String(response[i][j]) + '/"' + '>' + 'Descargar JSON M' + '</a></td>');
+                            $fila.append('<td class="text-center" align="center" valign="middle" >' + '<a class="btn btn-warning btn-sm my-2" target="_blank"  href="/descarga/experimentos/XLSX/' + String(response[i][j]) + '/"' + '>' + 'Descargar XLSX' + '</a></td>');
+                        }else{
+                            $fila.append('<td class="text-center" align="center" valign="middle" >' + String(response[i][j]) + '</td>');
+                        }
                     }
-                    $fila.append('<td class="text-center" align="center" valign="middle" >' + archivo[5] + '</td>');
-                    $fila.append('<td class="text-center" align="center" valign="middle" >' + archivo[6] + '</td>');
-                    fh = archivo[7]
-                    fh = fh.replaceAll('&', ' ');
-                    fh = fh.replaceAll('d', '/');
-                    fh = fh.replaceAll('-', ':');
-                    $fila.append('<td class="text-center" align="center" valign="middle" >' + fh + '</td>');
-                    d = archivo[8]
-                    d = d.replace('D-', '');
-                    d = d.replace('&', '.');
-                    $fila.append('<td class="text-center" align="center" valign="middle" >' + d + '</td>');
+                    
+                    // $fila.append('<td class="text-center" align="center" valign="middle" >' + archivo[2] + '</td>');
+                    // $fila.append('<td class="text-center" align="center" valign="middle" >' + archivo[3] + '</td>');
+
+                    
 
 
-                    // $fila.append('<td class="text-center" align="center" valign="middle">'+'<a '+ "onclick= mostrarArchivoAct('"+response[i]+"')"+' >'+response[i]+'</a></td>');
-                    // $fila.append('<td class="text-center" align="center" valign="middle" >'+$a.innerHTML()+'</td>');
-                    $fila.append('<td class="text-center" align="center" valign="middle" >' + '<a class="btn btn-warning btn-sm my-2" target="_blank"  >' + 'Ver Archivo' + '</a></td>');
-                    $fila.append('<td class="text-center" align="center" valign="middle" >' + '<a class="btn btn-warning btn-sm my-2" target="_blank"  href="/descarga/experimentos/JSON/' + String(response[i]) + '.json/"' + '>' + 'Descargar JSON' + '</a></td>');
-                    $fila.append('<td class="text-center" align="center" valign="middle" >' + '<a class="btn btn-warning btn-sm my-2" target="_blank"  href="/descarga/experimentos/CSV/' + String(response[i]) + '.csv/"' + '>' + 'Descargar CSV' + '</a></td>');
+                    // // $fila.append('<td class="text-center" align="center" valign="middle">'+'<a '+ "onclick= mostrarArchivoAct('"+response[i]+"')"+' >'+response[i]+'</a></td>');
+                    // // $fila.append('<td class="text-center" align="center" valign="middle" >'+$a.innerHTML()+'</td>');
+                    // $fila.append('<td class="text-center" align="center" valign="middle" >' + '<a class="btn btn-warning btn-sm my-2" target="_blank"  >' + 'Ver Archivo' + '</a></td>');
+                    // $fila.append('<td class="text-center" align="center" valign="middle" >' + '<a class="btn btn-warning btn-sm my-2" target="_blank"  href="/descarga/experimentos/JSON/' + String(response[i]) + '.json/"' + '>' + 'Descargar JSON' + '</a></td>');
+                    // $fila.append('<td class="text-center" align="center" valign="middle" >' + '<a class="btn btn-warning btn-sm my-2" target="_blank"  href="/descarga/experimentos/CSV/' + String(response[i]) + '.csv/"' + '>' + 'Descargar CSV' + '</a></td>');
                     // $fila.append('<td class="text-center" align="center" valign="middle" >'+'<a class="btn btn-warning btn-sm my-2" href = "'+'"{{ url_for("getExpetimento"), filetype = "JSON", filename = "'+String(response[i])+'") }}'+'" target="_blank">'+'Descargar JSON'+'</a></td>');
                     // $fila.append('<td class="text-center" align="center" valign="middle" >'+'<a class="btn btn-info form-control btn-lg my-2" href="{{ url_for('+'getExpetimento'+', filetype = '+'JSON'+', filename = '+response[i]+') }}>Descargar JSON</a> </td>');
                     // $fila.append('<td class="text-center">'+'<a onclick=descargarArchivos('+response[i]+",'JSON')>"+response[i]+'</a></td>');
@@ -610,10 +621,14 @@
         return listSequence;
     }
 
-    function mostrarDatosJSON(p) {
+    function mostrarDatosJSON(p, tipo) {
         // var pos = dataReturn.Patrones[p].Posiciones;
-        console.log(dataReturn.Alineaciones[p].alineamientos);
-        var pos = dataReturn.Alineaciones[p].alineamientos;
+        if (tipo == 1) {
+            var pos = dataReturn.Patrones_Frecuentes.Patrones[p].Posiciones;
+        } else if (tipo == 0) {
+            var pos = dataReturn.Motifs.Alineaciones[p].alineamientos;
+        }
+        
         console.log(pos);
 
         var table = document.createElement('table');
@@ -628,21 +643,27 @@
         table.classList.add("table");
         table.classList.add("table-striped");
 
+        table.classList.add("table-responsive-sm");
+
 
         table.appendChild(thead);
         table.appendChild(tbody);
         th.classList.add("text-center");
 
-        th.innerHTML = 'Alineamiento';
-        tr.appendChild(th);
-
-        th = document.createElement('th');
-        th.innerHTML = 'Posicion';
-        tr.appendChild(th);
+        if (tipo == 0) {
+            th.innerHTML = 'Alineamiento';
+            tr.appendChild(th);
+        }
 
         th = document.createElement('th');
         th.innerHTML = 'Secuencia';
         tr.appendChild(th);
+        
+        th = document.createElement('th');
+        th.innerHTML = 'Posicion';
+        tr.appendChild(th);
+
+        
 
         thead.appendChild(tr);
 
@@ -652,10 +673,20 @@
             var td = document.createElement('td');
 
             // td.style.alignContent = "center";
+            if (tipo == 0) {
+                td.classList.add("text-center");
+                td.align = "center";
+                td.vAlign = "middle";
+                td.innerHTML = pos[i].alineamiento;
+                tr.appendChild(td);
+            }
+
+            td = document.createElement('td');
             td.classList.add("text-center");
             td.align = "center";
             td.vAlign = "middle";
-            td.innerHTML = pos[i].alineamiento;
+            td.innerHTML = pos[i].secuencia;
+            td.style.alignContent = "center";
             tr.appendChild(td);
 
             td = document.createElement('td');
@@ -666,13 +697,7 @@
             td.style.alignContent = "center";
             tr.appendChild(td);
 
-            td = document.createElement('td');
-            td.classList.add("text-center");
-            td.align = "center";
-            td.vAlign = "middle";
-            td.innerHTML = pos[i].secuencia;
-            td.style.alignContent = "center";
-            tr.appendChild(td);
+            
 
             tbody.appendChild(tr);
         }
@@ -725,7 +750,8 @@
                     "input": "Manual",
                     "longtud_minina": $('#LMC').val(),
                     "tolerancia_delante":$('#tolerancia_delante').val(),
-                    "tolerancia_atras":$('#tolerancia_atras').val()
+                    "tolerancia_atras":$('#tolerancia_atras').val(),
+                    "imprimir_logo":$('#checkLogo').is(':checked')
                 }];
                 console.log(sendData);
                 $.ajax({
@@ -755,6 +781,8 @@
                         // console.log('regreso:', data_response);
                         // console.log('longitud respose: ', data_response.length);
                         // console.log('longitud return: ', dataReturn.length);
+                        console.log(data_response);
+                        // console.log(data_response2);
                         if (dataReturn.length > 0) {
                             dataReturn.empty();
                         }
@@ -810,8 +838,10 @@
                 console.log($('#formControlInputSelect').val());
 
                 var form_data = new FormData();
-                console.log($('tolerancia_delante').val());
-                console.log($('tolerancia_atras').val());
+                console.log($('#tolerancia_delante').val());
+                console.log($('#tolerancia_atras').val());
+                console.log($('#LMC').val());
+                console.log($('#checkLogo').is(':checked'));
 
                 form_data.append('Algoritmo', $('#selectAlgorithm').val());
                 form_data.append('min_sup', $('#minSup').val());
@@ -820,6 +850,7 @@
                 form_data.append('longtud_minina', $('#LMC').val());
                 form_data.append('tolerancia_delante', $('#tolerancia_delante').val());
                 form_data.append('tolerancia_atras', $('#tolerancia_atras').val());
+                form_data.append('imprimir_logo', $('#checkLogo').is(':checked'));
                 // form_data.append('input', $('#formControlInputSelect').val());
 
                 $.ajax({
@@ -851,6 +882,8 @@
                         // mostrarDatos(response, 'file');
                         // console.log('longitud respose: ', data_response.length);
                         // console.log('longitud return: ', dataReturn.length);
+                        console.log(data_response);
+
 
                         if (dataReturn.length > 0) {
                             dataReturn.empty();
@@ -904,11 +937,11 @@
         $tabs.append('<li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#tabMotifs">Motifs</a></li>');
         $tabs.append('<li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tabPatrones">Patrones</a></li>');
         $divContenedor = $('<div class="tab-content"></div>');
-        $divContenedorMotif = $('<div id="tabMotifs" class="tab-pane fade show active"></div>');
-        $divContenedorPatrones = $('<div id="tabPatrones" class="tab-pane fade"></div>');
+        $divContenedorMotif = $('<div id="tabMotifs" class="tab-pane fade show active table-responsive"></div>');
+        $divContenedorPatrones = $('<div id="tabPatrones" class="tab-pane fade table-responsive"></div>');
         
 
-        $tabla = $('<table id="resultadoMotifs" class="table table-bordered" cellpadding="5" ></table>');
+        $tabla = $('<table id="resultadoMotifs" class="table table-striped table-bordered table-sm small" cellpadding="4" ></table>');
         $tabla.empty();
         $tabla.append('<thead class="thead-light text-center " align = "center"> <tr>' +
             '<th>#</th>' +
@@ -926,34 +959,38 @@
             // '<th>Posiciones</th>' +
             '</tr> </thead>');
         $tablabody = $('<tbody></tbody>');
-        for (var i = 0; i < data.Alineaciones.length; i++) {
+        for (var i = 0; i < data.Motifs.Alineaciones.length; i++) {
         // for (var i = 0; i < data.Patrones.length; i++) {
-            // $fila = $("<tr onClick=mostrarDatosJSON("+i+") data-toggle='modal' data-target='#PatternsModal'></tr>");
+            // $fila = $("<tr data-toggle='modal' data-target='#PatternsModal'></tr>");
+            $fila = $("<tr></tr>");
             // console.log(data.Alineaciones[i]);
-            $fila = $("<tr data-toggle='modal' data-target='#PatternsModal'></tr>");
+            // $fila = $("<tr data-toggle='modal' data-target='#MotifsModal'></tr>");
             $fila.append('<td>' + (i + 1) + '</td>');
-            $fila.append('<td>' + data.Alineaciones[i].patron + '</td>');
-            $fila.append('<td>' + data.Alineaciones[i].motif + '</td>');
-            $fila.append('<td>' + data.Alineaciones[i].expresion_regular + '</td>');
-            $fila.append('<td>' + data.Alineaciones[i].ocurrencias_patron + '</td>');
-            $fila.append('<td>' + data.Alineaciones[i].longitud_motif + '</td>');
-            $fila.append('<td>' + data.Alineaciones[i].traduccion_aminoacido + '</td>');
+            $fila.append('<td>' + data.Motifs.Alineaciones[i].patron + '</td>');
+            $fila.append('<td>' + data.Motifs.Alineaciones[i].motif + '</td>');
+            $fila.append('<td>' + data.Motifs.Alineaciones[i].expresion_regular + '</td>');
+            $fila.append('<td>' + data.Motifs.Alineaciones[i].ocurrencias_patron + '</td>');
+            $fila.append('<td>' + data.Motifs.Alineaciones[i].longitud_motif + '</td>');
+            $fila.append('<td>' + data.Motifs.Alineaciones[i].traduccion_aminoacido + '</td>');
             // $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Patron + '</td>');
             // $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Longitud + '</td>');
             // $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Ocurrencias + '</td>');
             // $fila.append('<td class="text-center" align="center" valign="middle" >' + '<button type="button" class="btn  btn-warning"' + "onClick=mostrarDatosJSON(" + i + ")>" + "Posiciones" + '</button>' + '</td>');
-            $fila.append('<td class="text-center" align="center" valign="middle" >' + '<button type="button" class="btn  btn-warning"' + "onClick=mostrarDatosJSON(" + i + ")>" + "Detalles" + '</button>' + '</td>');
+            $fila.append('<td class="text-center" align="center" valign="middle"'+"data-toggle='modal' data-target='#PatternsModal'"+'>'+ '<button type="button" class="btn  btn-warning"' + "onClick=mostrarDatosJSON(" + i + ","+0+")>" + "Detalles" + '</button>' + '</td>');
 
             $tablabody.append($fila);
         }
 
+        // $patrones.classList.add('border border-primary');
         $patrones.append('<h3 class="h5 text-info text-center p-2 m-2">Resultados</h3>');
-
+        $patrones.append($tabs);
+        
+        $divContenedorMotif.append(document.createElement('br'));
         $tabla.append($tablabody);
         $divContenedorMotif.append($tabla);
 
 
-        $tabla2 = $('<table id="resultadoPatrones" class="table table-bordered" cellpadding="5" ></table>');
+        $tabla2 = $('<table id="resultadoPatrones" class="table table-striped  table-bordered " cellpadding="5" ></table>');
         $tabla2.empty();
         $tabla2.append('<thead class="thead-light text-center " align = "center"> <tr>' +
             '<th>#</th>' +
@@ -963,21 +1000,22 @@
             '<th>Posiciones</th>' +
             '</tr> </thead>');
         $tablabody2 = $('<tbody></tbody>');
-        for (var i = 0; i < data.Alineaciones.length; i++) {
+        for (var i = 0; i < data.Patrones_Frecuentes.Patrones.length; i++) {
         // for (var i = 0; i < data.Patrones.length; i++) {
             // $fila = $("<tr onClick=mostrarDatosJSON("+i+") data-toggle='modal' data-target='#PatternsModal'></tr>");
             // console.log(data.Alineaciones[i]);
-            $fila = $("<tr data-toggle='modal' data-target='#PatternsModal'></tr>");
-            $fila.append('<td>' + (i + 1) + '</td>');
-            $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Patron + '</td>');
-            $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Longitud + '</td>');
-            $fila.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones[i].Ocurrencias + '</td>');
-            $fila.append('<td class="text-center" align="center" valign="middle" >' + '<button type="button" class="btn  btn-warning"' + "onClick=mostrarDatosJSON(" + i + ")>" + "Posiciones" + '</button>' + '</td>');
+            $fila2 = $("<tr></tr>");
+            $fila2.append('<td>' + (i + 1) + '</td>');
+            $fila2.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones_Frecuentes.Patrones[i].Patron + '</td>');
+            $fila2.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones_Frecuentes.Patrones[i].Longitud + '</td>');
+            $fila2.append('<td class="text-center" align="center" valign="middle" >' + data.Patrones_Frecuentes.Patrones[i].Ocurrencias + '</td>');
+            $fila2.append('<td class="text-center" align="center" valign="middle"'+"data-toggle='modal' data-target='#PatternsModal'"+'>' + '<button type="button" class="btn  btn-warning"' + "onClick=mostrarDatosJSON(" + i + ","+1+")>" + "Detalles" + '</button>' + '</td>');
            
 
-            $tablabody2.append($fila);
+            $tablabody2.append($fila2);
         }
 
+        $divContenedorPatrones.append(document.createElement('br'));
         $tabla2.append($tablabody2);
         $divContenedorPatrones.append($tabla2);
 
@@ -1017,7 +1055,7 @@
         //$patrones.append(a);
         // $patrones.append(aJSON);
         bttdiv.append(aJSON);
-        bttdiv.append("<br>");
+        bttdiv.append(document.createElement('br'));
         // $patrones.append("<br>");
 
         //boton de descarga de archivo csv
@@ -1034,12 +1072,12 @@
         aCSV.innerHTML = "Descargar CSV Patrones frecuentes";
 
         bttdiv.append(aCSV);
-        bttdiv.append("<br>");
+        bttdiv.append(document.createElement('br'));
 
         //boton de descarga de archivo xlsx motifs
         var aXLS = document.createElement('a');
         aXLS.id = "downCurrentFileXLS";
-        aXLS.href = "/descarga/experimentos/currentXLS/" //"{{ url_for('getExpetimento', filetype = 'currentJSON') }}";
+        aXLS.href = "/descarga/experimentos/currentXLSX/" //"{{ url_for('getExpetimento', filetype = 'currentJSON') }}";
         aXLS.target = "_blank";
         aXLS.classList.add("btn");
         aXLS.classList.add("btn-info");
@@ -1047,15 +1085,15 @@
         aXLS.classList.add("btn-lg");
         aXLS.classList.add("my-2");
         aXLS.title = "Descarga los resultados en un archivo xls de los motifs hallados";
-        aXLS.innerHTML = "Descargar xls";
+        aXLS.innerHTML = "Descargar XLSX Motifs";
 
         bttdiv.append(aXLS);
-        bttdiv.append("<br>");
+        bttdiv.append(document.createElement('br'));
 
         //boton de descarga de archivo xlsx motifs
         var aJSONm = document.createElement('a');
         aJSONm.id = "downCurrentFileJSONm";
-        aJSONm.href = "/descarga/experimentos/currentJSONmotifs/" //"{{ url_for('getExpetimento', filetype = 'currentJSON') }}";
+        aJSONm.href = "/descarga/experimentos/currentJSONMotif/" //"{{ url_for('getExpetimento', filetype = 'currentJSON') }}";
         aJSONm.target = "_blank";
         aJSONm.classList.add("btn");
         aJSONm.classList.add("btn-info");
@@ -1066,7 +1104,7 @@
         aJSONm.innerHTML = "Descargar JSON Motifs";
 
         bttdiv.append(aJSONm);
-        bttdiv.append("<br>");
+        bttdiv.append(document.createElement('br'));
 
         //boton de nuevo proceso
         var newprocess = document.createElement('button');
@@ -1090,7 +1128,9 @@
 
         $(document).ready(function () {
             $('#resultadoMotifs').DataTable();
+            $('#resultadoPatrones').DataTable();
             $('.dataTables_length').addClass('bs-select');
+
         });
 
     }
@@ -1152,7 +1192,16 @@
                 alert('Debe seleccionar un archivo FASTA');
                 return false;
             } else if ($('#minSup').val() == '') {
-                alert('Debe ingresar un valor del umbral');
+                alert('Debe ingresar un valor para umbral');
+                return false;
+            } else if ($('#LMC').val() == '') {
+                alert('Debe ingresar un valor para la longitud minima');
+                return false;
+            } else if ($('#tolerancia_atras').val() == '') {
+                alert('Debe ingresar un valor para tolerancia detras');
+                return false;
+            } else if ($('#tolerancia_delante').val() == '') {
+                alert('Debe ingresar un valor para tolerancia delante');
                 return false;
             } else if ($('#selectAlgorithm').val() == -1) {
                 alert('Debe seleccionar un algoritmo');
@@ -1166,6 +1215,15 @@
                 return false;
             } else if ($('#minSup').val() == '') {
                 alert('Debe ingresar un valor del umbral');
+                return false;
+            } else if ($('#LMC').val() == '') {
+                alert('Debe ingresar un valor para la longitud minima');
+                return false;
+            } else if ($('#tolerancia_atras').val() == '') {
+                alert('Debe ingresar un valor para tolerancia detras');
+                return false;
+            } else if ($('#tolerancia_delante').val() == '') {
+                alert('Debe ingresar un valor para tolerancia delante');
                 return false;
             } else if ($('#selectAlgorithm').val() == -1) {
                 alert('Debe seleccionar un algoritmo');

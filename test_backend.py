@@ -1,8 +1,8 @@
 import unittest
 import os
-from Plataforma_motifs import algoritmos
+# from Plataforma_motifs import algoritmos
 import Reader as r
-from algoritmos import BI_n_sequences_copy as bims, BI_copy as bi, gsp as gsp
+# from algoritmos import BI_n_sequences_copy as bims, BI_copy as bi, gsp as gsp
 from datetime import datetime
 import pandas as pd
 
