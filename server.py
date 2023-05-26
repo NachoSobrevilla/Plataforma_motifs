@@ -32,14 +32,41 @@ CURRENTFILE = ''
 #     return CURRENTFILE
 
 @app.route('/')#decorador
-def index(): #funcion para mostrar la pagina
+def index(): 
+    """
+    Renderiza la pagina principal
+
+    Returns:
+        template hmtl : renderiza el archivo html 
+    """
     return render_template('index.html')
 
 
 @app.route('/analisisText', methods=['GET', 'POST'])
 def analisisTxt():
     # print(request.is_json)
+    """
+    Recibe los datos de peticion web en json del tipo de entrada en Texto, ejecuta el algoritmo solitado y obtiene 
+    los motifs y patrones frecuentes de las secuencias de ADN de entrada
     
+    Params (json) : 
+        min_sup (int) : El valor minimo soporte (umbral) para patrones frecuentes
+        algoritmo (str) : Indica que algoritmo será utilizado
+        keys_sequences (list <str>) : Es una lista de los id's de las secuencias de ADN utilizadas en el analisis
+        sequence (list <str> ) : Es la lista de secuencias de ADN
+        input (str) : Es el tipo de entrada de datos (Manual/Texto)
+        longitud_minima (int) : Es la longitud minima que tiene que tener una subsecuencia para que se considere un motif
+        tolerancia_delante (int) : Es la tolerancia de nucleotidos hacia la derecha para unir dos patrones frecuentes
+        tolerancia_atras (int) : Es la tolerancia de nucleotidos hacia la izquierda para unir dos patrones frecuentes
+        imprimir_logo (boolean) : Permite imprimir los graficos (logos) de los motifs
+    
+    Returns:
+        json : La información detallada de los motifs y patrones frecuentes 
+    
+    Notas:
+        - Se toma los detalles de la ejecución para llevar un registro
+        - Esta funcion es solo para el modo de entrada 'Texto o Manual'
+    """
     dt1 = datetime.now()
     
     request_json = request.get_json()
@@ -53,34 +80,6 @@ def analisisTxt():
     tolerancia_atras = int(request_json[0]['tolerancia_atras'])
     imprimir_logo = bool(request_json[0]["imprimir_logo"])
     print(imprimir_logo)
-
-    # input_type =  input_type + str( datetime.now())
-    
-    # print("Algoritmos:",algorithm)
-    
-    # patrones = {}
-
-    # if algorithm == 'bi':
-    #     bi = basado_indices(sequences, min_sup)
-    #     bi.set_pos(bi.find_pos())
-    #     bi.run()
-    #     patrones.update(bi.info_patrones())
-
-    # elif algorithm == 'bi+':
-    #     bis = basado_indices_secuencial(sequences, min_sup)
-    #     bis.set_pos(bis.find_pos())
-    #     bis.run()
-    #     bis.set_keys_seqs()
-    #     patrones = bis.info_patrones()
-
-    # elif algorithm == 'gsp':
-    #     print('en gsp')
-    #     gsp = GSP(sequences, min_sup, inputType=input_type, debug=True)
-    #     gsp.run()
-    #     patrones = gsp.info_candidates()
-        
-    # else:
-    #     passsequences
     
     patrones, motifs = find_motifs(sequences, min_sup, input_type, 'texto-plano', algorithm, keys_seq=keys_seqs,
                                            tolerancia_atras=tolerancia_atras, tolerancia_frente=tolerancia_delante, longitud_minina=longitud_minima, imprimir_logo=imprimir_logo)
@@ -126,21 +125,35 @@ def analisisTxt():
     else:
         return jsonify({'Message_error':'Ejecución sin resultados'})
 
-    # return json.dumps({'Candidatos':candidates})
-
-    # sequence = request.get_data()
-    # print(request_json)
-    
-    # if request_json:
-    #     print(request_json)
-    #     return 
-    # else:
-    #     return json.dumps({{'Error': 'Error en el proceso'}})
         
 
 @app.route('/analisisFile', methods=['GET', 'POST'])
 def analisisFile():
     # request.get_data()
+    """
+    Recibe los datos de peticion web en json del tipo de entrada en Archivo, ejecuta el algoritmo solitado y obtiene
+    los motifs y patrones frecuentes de las secuencias de ADN de entrada
+
+    Params (json) :
+        min_sup (int) : El valor minimo soporte (umbral) para patrones frecuentes
+        algoritmo (str) : Indica que algoritmo será utilizado
+        keys_sequences (list <str>) : Es una lista de los id's de las secuencias de ADN utilizadas en el analisis
+        sequence (list <str> ) : Es la lista de secuencias de ADN
+        input (str) : Es el tipo de entrada de datos (Archivo)
+        longitud_minima (int) : Es la longitud minima que tiene que tener una subsecuencia para que se considere un motif
+        tolerancia_delante (int) : Es la tolerancia de nucleotidos hacia la derecha para unir dos patrones frecuentes
+        tolerancia_atras (int) : Es la tolerancia de nucleotidos hacia la izquierda para unir dos patrones frecuentes
+        imprimir_logo (boolean) : Permite imprimir los graficos (logos) de los motifs
+
+    Returns:
+        json : La información detallada de los motifs y patrones frecuentes
+
+    Notas:
+        - Se toma los detalles de la ejecución para llevar un registro
+        - Esta funcion es solo para el modo de entrada 'Archivo'
+        - La forma de la solicitud web es diferente que en la funcion analisisTxt
+    """
+
     dt1 = datetime.now()
     
     algorithm = request.form["Algoritmo"]
@@ -175,46 +188,6 @@ def analisisFile():
     print(input_name)
     read = Reader(absolutepath)
     list_sequences, head_sequences, keys_seq = read.run()
-    # if algorithm == 'bi':
-    #     for sequences in list_sequences: #Modificar
-    #         # bi = basado_indices(list_sequences[0], min_sup, inputType= input_type)
-    #         bi = basado_indices(sequences, min_sup, inputType= input_type)
-    #         bi.set_pos(bi.find_pos())
-    #         bi.run()
-    #         patrones.update(bi.get_infopos())
-    #         # candidates = bi.run()
-
-    # elif algorithm == 'bi+':
-    #     bis = basado_indices_secuencial(list_sequences, min_sup, inputType=input_type)
-    #     bis.set_pos(bis.find_pos())
-    #     bis.run()
-    #     print(bis.get_patrones())
-    #     bis.set_keys_seqs(keys_seq)
-    #     patrones = bis.info_patrones()
-
-    
-    # elif algorithm == 'gsp':
-    #     gsp = GSP(list_sequences, min_sup, inputType=input_type)
-    #     gsp.run()
-    #     patrones = gsp.info_candidates()
-        # print(patrones)
-        # candidates = bis.run()
-
-    # Metodo de busqueda binaria no continua 
-    # print(list, head)
-    # print(request.get_data(), '', request.is_json, request.files , request)
-    
-    # file = request.get_json()
-    # print(file)
-    # if file:
-    #     return json.dumps({'Success': 'Proceso con exito'})
-    # else:
-    #     return json.dumps({{'Error': 'Error en el proceso'}})
-
-    # r_value = json.dumps({"Encabezados":head_sequences, "Candidatos":candidates})
-    # print(type(r_value))
-    # print(r_value)
-    # return r_value, 200, {"Content-Type": "application/json"}
     patrones, motifs = find_motifs(list_sequences, min_sup, input_type, input_name, algorithm, keys_seq, tolerancia_atras, tolerancia_delante, longitud_minima, imprimir_logo)
     if len(patrones['Patrones']) > 0:
         files_generator(patrones, tolerancia_delante, tolerancia_atras, longitud_minima, imprimir_logo)
@@ -256,12 +229,34 @@ def analisisFile():
     # return jsonify([{"Encabezados": head_sequences, "Candidatos": candidates}])
 
 def find_motifs(list_sequences= [], min_sup = 0, input_type='', input_name = '', algorithm = '', keys_seq=[], tolerancia_atras = 2, tolerancia_frente = 2, longitud_minina=6, imprimir_logo = False): 
-    '''Funcion que contiene los algoritmos para hallar motifs'''
+     
+    """Funcion que contiene los algoritmos para hallar motifs
+
+    Params:
+        list_sequences = [] (list <str>) : Es la lista de secuencias de ADN
+        min_sup = 2 (int) : El valor minimo soporte (umbral) para patrones frecuentes
+        input_type = '' (str) : Es el tipo de entrada de datos (Archivo o Entrada Manual)
+        input_name = '' (str) : Es el nombre del archivo en que caso que se utilize el modo 
+        algorithm = '' (str) : Indica que algoritmo será utilizado
+        keys_seq = [] (list <str>) : Es una lista de los id's de las secuencias de ADN utilizadas en el analisis
+        tolerancia_atras = 2 (int) : Es la tolerancia de nucleotidos hacia la izquierda para unir dos patrones frecuentes
+        tolerancia_frente = 2 (int) : Es la tolerancia de nucleotidos hacia la derecha para unir dos patrones frecuentes
+        longitud_minina = 6 (int) : Es la longitud minima que tiene que tener una subsecuencia para que se considere un motif
+        imprimir_logo (boolean) : Permite imprimir los graficos (logos) de los motifs
+    
+    Varibles:
+        patrones  = {} (dict) 
+        motifs = {} (dict) 
+     
+    Returns:
+        patrones  = {} (dict) : Retorna la información de los patrones frecuentes a partir del analisis de las secuencias de ADN.
+        motifs = {} (dict) : Retorna la información de los motifs a partir del analisis de las secuencias de ADN.
+    
+    Notes:
+        - Cada algoritmo llama a su función correspondiente.
+    """
     patrones = {}
     motifs = {}
-     
-    
-    
     
     if algorithm == 'bi':
         bi = basado_indices(inputType = input_type, inputName = input_name)
@@ -275,16 +270,9 @@ def find_motifs(list_sequences= [], min_sup = 0, input_type='', input_name = '',
         
         bi.set_finDateTime(datetime.now())
         bi.set_keys_seqs(keys_seq)
-        # bi = basado_indices(list_sequences[0], min_sup, inputType= input_type)
-        # bi = basado_indices(list_sequences, min_sup, inputType=input_type)
-        # bi.set_pos(bi.find_pos())
-        # bi.run()
+
         patrones.update(bi.info_patrones())
-        
-        # ap = Alineador_Patornes.Alineador(
-        #     secuencia=list_sequences[0], tolerancia_delante= tolerancia_frente, tolerancia_atras= tolerancia_atras, longitud_minina_cre= longitud_minina, json_patrones=patrones)
-        # motifs.update(ap.alineador())
-        # candidates = bi.run()
+
 
     elif algorithm == 'bi+':
         head, tail = os.path.split(input_name)
@@ -337,31 +325,6 @@ def find_motifs(list_sequences= [], min_sup = 0, input_type='', input_name = '',
         
     return patrones, motifs
 
-# def json_generator(algoritmo, min_sup, inputType, nomArch, keySeq, sequences):
-#     def key_seq(x): return keySeq[x] if len(keySeq) else x
-#     return {
-#             "Configuracion": {
-#                 "Algoritmo": algoritmo,
-#                 "Min_sup": min_sup,
-#                 "Tipo_Entrada": inputType,
-#                 "Entrada": nomArch,
-#                 "Sequencias_ananlizadas": str(keySeq),
-#                 "Num_Sequencias_ananlizadas": len(self.get_ds()),
-#                 "Num_Patrones_hallados": len(self.get_patrones()),
-#                 "Fecha_Hora_Inicio": '{}'.format(self.get_initDateTime()),
-#                 "Fecha_Hora_Fin": '{}'.format(self.get_finDateTime()),
-#                 "Duracion": str(self.get_finDateTime() - self.get_initDateTime())
-#             },
-#             "Patrones": [{
-#                 "Patron": key,
-#                 "Longitud": len(key),
-#                 "Ocurrencias": len(values),
-#                 "Posiciones": [{
-#                     "sequencia": key_seq(seq),
-#                     "posicion": p+1}
-#                     for seq, pos in values.items() for p in pos]
-#             }for key, values in self.patrones.items()]
-#     }
 
 def files_generator(patrones={}, tolerancia_delante=2, tolerancia_detras=2, longitud_min=6, logos=False):
     global CURRENTFILECSV, CURRENTFILEJSON, CURRENTFILE

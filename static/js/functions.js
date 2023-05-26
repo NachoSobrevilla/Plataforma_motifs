@@ -1,5 +1,6 @@
     var dataReturn = {};
     var textseqs = 0;
+    //Carga de la pagina 
     window.addEventListener('load', init, false)
 
      //Lectura de archivo Fasta al subirlo a la plataforma
@@ -62,7 +63,8 @@
             console.log("No se pudo mostrar el archivo");
             alert("No se pudo mostrar el archivo");
         }
-
+    
+    //Es la primera funcion 
     function init() {
         document.getElementById("formControlInputSelect").selectedIndex = -1;
         // document.getElementById("selectAlgorithm").selectedIndex = -1;
@@ -388,14 +390,17 @@
 
     document.addEventListener("DOMContentLoaded", hideForms);
 
+    //Funcion para esconder las formas principales de cada entrada
     function hideForms() {
         document.getElementById("principalFormFile").style.display = "none";
         document.getElementById("principalFormTxt").style.display = "none";
         document.getElementById("configAlgorithm").style.display = "none";
+        document.getElementById("principalFormGenBank").style.display = "none";
         $("#resultados").empty();
         // document.getElementById("resultForm").style.display = "none";
-    }
 
+    }
+    //funcion para la limpiar los campos de entrada de texto
     function limpiarCamposTxt() {
         textseqs = 0;
         document.getElementById("inputManualADNText").value = '';
@@ -403,11 +408,18 @@
         document.getElementById("previsualSequenceAnalisis").rows = 1;
     }
 
+    //funcion para limpiar los campos de la entrada de archivo
     function limpiarCamposFile() {
         document.getElementById("inputFile").value = '';
         // document.getElementById("previsualSequenceAnalisisFile").value = '';
     }
 
+    //funcion para limpiar los campos 
+    function limpiarCamposGenbank(){
+        document.getElementById("infoGenBank").value = "";
+        document.getElementById("infoGenBank").rows = 1;   
+    }
+    //funcion para limpiar los campos de configuración
     function limpiarCampoConfig() {
         document.getElementById("minSup").value = '';
         document.getElementById("LMC").value = '';
@@ -422,9 +434,6 @@
         document.getElementById("infoAlgoritmo").title = 'Ingrese una secuencia de ADN para comenzar';
         document.getElementById("btnSentSeqText").display = "none";
         document.getElementById("btnSentSeqFile").display = "none";
-
-
-
         // document.getElementById("formControlInputSelect").selectedIndex = -1;
     }
 
@@ -434,6 +443,7 @@
         limpiarCampoConfig()
         document.getElementById("btnSentSeqFile").style.display = "none";
         document.getElementById("btnSentSeqText").style.display = "none";
+        document.getElementById("btnSentGenBank").style.display = "none";
         document.getElementById("configAlgorithm").style.display = "none";
         switch (item_selected.options[item_selected.selectedIndex].value) {
 
@@ -441,6 +451,7 @@
                 limpiarCamposTxt();
                 document.getElementById("principalFormTxt").style.display = "block";
                 document.getElementById("principalFormFile").style.display = "none";
+                document.getElementById("principalFormGenBank").style.display = "none";
                 // document.getElementById("sendSequenceTxt").style.display = "none";
                 break;
 
@@ -449,9 +460,16 @@
                 document.getElementById("principalFormFile").style.display = "block";
                 document.getElementById("btnSentSeqFile").style.display = "none";
                 document.getElementById("principalFormTxt").style.display = "none";
-
                 break;
 
+            case "inputGenBank":
+                limpiarCamposGenbank();
+                document.getElementById("principalFormGenBank").style.display = "block";
+                document.getElementById("principalFormTxt").style.display = "none";
+                document.getElementById("principalFormFile").style.display = "none";
+                break;
+
+                
             default:
                 hideElements();
                 break;
@@ -544,10 +562,7 @@
             limpiarCampoConfig();
             mostrarArchivos();
             document.getElementById("formControlInputSelect").selectedIndex = -1;
-            alert("Se han limpiado los campos");
-
-
-
+            alert("Se han limpiado los campos")
         }
     }
 
