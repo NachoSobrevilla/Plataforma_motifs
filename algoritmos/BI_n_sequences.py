@@ -70,7 +70,6 @@ class basado_indices(object):
       """Función dedicada a la busqueda inicial 
       de las posiciones de los nucleotidos en 
       las secuencias de ADN"""
-      
 
       r_value = {}
       list_pos = []

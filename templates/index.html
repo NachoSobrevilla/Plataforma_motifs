@@ -90,7 +90,6 @@
 
 
     <div class="justify-content-center container-fluid px-4 mx-4 py-2 my-2">
-        <!--Texto introductorio-->
         <p class="text-justify lead">
             Esta plataforma está enfocada al descubrimiento de motifs en secuencias de ADN con minería de patrones
             frecuentes.
@@ -135,7 +134,7 @@
                                         <option value="gsp">GSP</option>
                                         <option value="bi">Basado en indices</option>
                                         <option value="bi+">Basado en indices en multiples sequencias</option>
-                                    </select>s
+                                    </select>
                                 </div> 
 
                                 <div class="form-group form-row m-2" id='initOptions'> 
@@ -150,7 +149,6 @@
                                         onchange="selectProcess()">
                                         <option value="inputManual">Ingresar Manualmente</option>
                                         <option value="inputFile">Subir archivo de tipo FASTA</option>
-                                        <option value="inputGenBank">Buscar las secuencias de ADN en Genbank</option>
                                         <!-- <option value="inputDB">Desde una base de datos biologica (Genbank)</option> -->
                                     </select>
                                     <span id="infoProceso" class="material-icons mx-2"
@@ -195,26 +193,6 @@
                                     <span id="infoArchivos" class="material-icons mx-2" title="Seleccione un archivo FASTA que contenga la(s) secuencia(s) de ADN que desee analizar.">info</span>
                                     
                                     <input type="file" class="form-control-file" id="inputFile" name='inputFile' accept=".fasta" draggable="true">
-                                    <!--multiple-->
-                                </div>
-                                <!-- <div class="form-group row m-2" id='inputFileRow2'>
-                                    <textarea class="form-control my-2" id="previsualSequenceAnalisisFile" rows="10"
-                                        placeholder="Previsualización" readonly></textarea> 
-                                      <button type="button" class="btn btn-info form-control btn-lg my-2" id="sendSequenceFile">Iniciar Análisis</button> 
-                                  </div>  -->
-                            </fieldset>
-
-                        </form>
-                        
-                        <form class="row container-fluid m-2" id="principalFormGenBank">
-                            <!--formulario para subir archivos-->
-                            <fieldset>
-                                <div class="form-group row m-2" id='inputGenBankRow'>
-                                    <label for="inputGenBank">Ingrese la(s) referencia(s) NBCI de la(s) secuencia(s) de ADN</label>
-                                    <span id="infoGenBank" class="material-icons mx-2" title="Ingrese una o más referencias NCBI de las secuencias de ADN. Si ingresa dos o más referencias, las puede separar con un enter">info</span>
-                                    
-                                    <input type="text" class="form-control" id="inputGenBank" name='inputGenBank' accept=".fasta" draggable="true">
-                                    <button type="button" class="btn btn-info form-control btn-lg my-2" id="searchADNGenbank" onclick="">Buscar</button>
                                     <!--multiple-->
                                 </div>
                                 <!-- <div class="form-group row m-2" id='inputFileRow2'>
@@ -285,11 +263,6 @@
                                 
                                 <div id ="btnSentSeqText" class = "form-group form-row align-middle" >
                                     <button id="sendSequenceTxt" type="button" class="btn btn-info form-control btn-lg m-2"
-                                    >Iniciar Análisis</button>
-                                </div>
-
-                                <div id ="btnSentGenBank" class = "form-group form-row align-middle" >
-                                    <button id="sendGenBank" type="button" class="btn btn-info form-control btn-lg m-2"
                                     >Iniciar Análisis</button>
                                 </div>
                                 <!-- </div> -->
